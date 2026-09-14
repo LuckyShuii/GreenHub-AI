@@ -10,7 +10,7 @@ from PIL import Image
 from qdrant_client import AsyncQdrantClient
 
 from configs import get_settings
-from .controler import Controler
+from .controller import Controller
 from .embedder import ImageEmbedder
 from .fetcher import ImageFetcher
 from .indexer import RegionIndexer
@@ -88,7 +88,7 @@ async def lifespan(app: "Viewer") -> AsyncIterator[None]:
 class Viewer(FastAPI):
     """FastAPI application holding a controller instance."""
 
-    controler: Controler
+    controller: Controller
 
     def __init__(self, **kwargs: object) -> None:
         """Initialize the FastAPI app, controller and lifespan.
@@ -98,7 +98,7 @@ class Viewer(FastAPI):
 
         """
         super().__init__(lifespan=lifespan, **kwargs)  # type: ignore
-        self.controler = Controler()
+        self.controller = Controller()
 
     async def get_response(self, image: Image.Image, region: str) -> Response:
         """Return the model response for an uploaded image.
@@ -110,4 +110,4 @@ class Viewer(FastAPI):
             The classification Response.
 
         """
-        return await self.controler.get_model_response(image, region)
+        return await self.controller.get_model_response(image, region)

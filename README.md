@@ -10,7 +10,7 @@ Greener est une API FastAPI de classification d'images de déchets. Au démarrag
 ├── configs.py              # Paramètres typés chargés depuis l'environnement et .env
 ├── logging_config.py       # Configuration centralisée des logs
 ├── viewer.py               # Application FastAPI, cycle de vie et indexation au démarrage
-├── controler.py            # Couche de coordination entre la vue et le modèle
+├── Controller.py            # Couche de coordination entre la vue et le modèle
 ├── model.py                # Embedding de la requête et recherche de similarité Qdrant
 ├── indexer.py              # Orchestration de l'indexation multi-région
 ├── fetcher.py              # Recherche et téléchargement des images de référence
@@ -26,8 +26,8 @@ Greener est une API FastAPI de classification d'images de déchets. Au démarrag
 Rôles détaillés :
 
 - `main.py` instancie `Viewer` sous le nom `servapp`, définit l'endpoint multipart et lance Uvicorn quand le fichier est exécuté directement.
-- `viewer.py` configure le lifespan FastAPI, déclenche l'indexation de toutes les régions avant de rendre l'application disponible et délègue les requêtes à `Controler`.
-- `controler.py` fait le lien entre la vue et `Model`.
+- `viewer.py` configure le lifespan FastAPI, déclenche l'indexation de toutes les régions avant de rendre l'application disponible et délègue les requêtes à `Controller`.
+- `Controller.py` fait le lien entre la vue et `Model`.
 - `model.py` vérifie la collection de la région, calcule l'embedding de l'image et interroge Qdrant avec une limite de 1 résultat.
 - `indexer.py` crée les collections, vérifie les identifiants déjà présents et orchestre la récupération, l'embedding et l'upsert des images par région.
 - `fetcher.py` utilise `DDGS` pour rechercher des URLs d'images, `httpx` pour les télécharger avec retries et limite de concurrence, et peut enregistrer une copie JPEG locale.
@@ -214,7 +214,7 @@ sequenceDiagram
     participant Client
     participant API as main.py / FastAPI
     participant Viewer
-    participant Controller as Controler
+    participant Controller as Controller
     participant Model
     participant Embedder as ImageEmbedder
     participant Qdrant

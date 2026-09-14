@@ -5,7 +5,7 @@ from PIL import Image
 from .model import Model, Response
 
 
-class Controler:
+class Controller:
     """Coordinates model access for the viewer layer."""
 
     model: Model

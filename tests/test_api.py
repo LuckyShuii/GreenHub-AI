@@ -18,7 +18,7 @@ def client(monkeypatch: pytest.MonkeyPatch) -> TestClient:
             bin_color="Poubelle VERTE (verre)",
         )
     )
-    monkeypatch.setattr(main.servapp.controler, "get_model_response", stub)
+    monkeypatch.setattr(main.servapp.Controller, "get_model_response", stub)
     return TestClient(main.servapp)
 
 
@@ -50,7 +50,7 @@ def test_upload_unknown_material_returns_422(
 ) -> None:
     """An unmapped material surfaces as HTTP 422."""
     stub = AsyncMock(side_effect=UnknownMaterialError("wood"))
-    monkeypatch.setattr(main.servapp.controler, "get_model_response", stub)
+    monkeypatch.setattr(main.servapp.Controller, "get_model_response", stub)
     client = TestClient(main.servapp)
 
     response = client.post(
