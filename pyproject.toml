@@ -1,0 +1,38 @@
+[project]
+name = "greener-ai-pipeline"
+version = "0.1.0"
+description = "AI plateform for the Greener project"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "ddgs>=9.14.4",
+    "fastapi>=0.131.0",
+    "keras>=3.13.2",
+    "pydantic>=2.12.5",
+    "pydantic-settings>=2.14.2",
+    "python-dotenv>=1.2.1",
+    "python-multipart>=0.0.22",
+    "qdrant-client>=1.18.0",
+    "tensorflow>=2.20.0",
+    "torch>=2.10.0",
+    "transformers>=5.2.0",
+    "uvicorn>=0.41.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.15.20",
+]
+
+[tool.ruff]
+line-length = 79
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "D", "UP", "ANN"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
