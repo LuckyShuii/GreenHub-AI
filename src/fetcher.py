@@ -53,7 +53,7 @@ class ImageFetcher:
         try:
             with DDGS() as ddgs:
                 time.sleep(5)
-                results = ddgs.images(query, max_results=count)
+                results = ddgs.images(query + " dechet", max_results=count)
             return [item["image"] for item in results]
         except Exception as error:  # noqa: BLE001
             logger.warning("Image search failed for '%s': %s", query, error)

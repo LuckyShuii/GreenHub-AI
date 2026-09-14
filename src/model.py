@@ -128,7 +128,7 @@ class Model:
 
         results = await self._client.query_points(
             collection_name=region,
-            query= await vector,
+            query=await vector,
             limit=1,
             with_payload=True,
         )
