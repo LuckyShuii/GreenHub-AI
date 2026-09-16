@@ -15,6 +15,7 @@ dependencies = [
     "qdrant-client>=1.18.0",
     "tensorflow>=2.20.0",
     "torch>=2.10.0",
+    "torchvision>=0.29.0",
     "transformers>=5.2.0",
     "uvicorn>=0.41.0",
 ]
@@ -36,3 +37,6 @@ select = ["E", "F", "I", "N", "D", "UP", "ANN"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+markers = [
+    "performance: throughput benchmark, excluded from the default run",
+]
