@@ -57,7 +57,7 @@ async def upload_file(
             detail=str(exc),
         ) from exc
 
-    return JSONResponse(response.model_dump())
+    return JSONResponse(response)
 
 
 if __name__ == "__main__":

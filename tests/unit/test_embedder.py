@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
-import torch
+from torch import ones, zeros 
 from PIL import Image
 
 from src.embedder import ImageEmbedder
@@ -29,7 +29,7 @@ def _build_model_stub(hidden_size: int = HIDDEN_SIZE) -> MagicMock:
     model.config.hidden_size = hidden_size
     model.to.return_value = model
     outputs = MagicMock()
-    outputs.last_hidden_state = torch.ones((1, 5, hidden_size))
+    outputs.last_hidden_state = ones((1, 5, hidden_size))
     model.return_value = outputs
     return model
 
@@ -42,8 +42,8 @@ def _build_processor_stub() -> MagicMock:
     """
     processor = MagicMock()
     encoding = MagicMock()
-    encoding.to.return_value = {"pixel_values": torch.zeros((1, 3, 224, 224))}
-    encoding.__getitem__.side_effect = lambda key: torch.zeros(
+    encoding.to.return_value = {"pixel_values":  zeros((1, 3, 224, 224))}
+    encoding.__getitem__.side_effect = lambda key: zeros(
         (1, 3, 224, 224)
     )
     processor.return_value = encoding
