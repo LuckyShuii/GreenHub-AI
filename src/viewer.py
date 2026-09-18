@@ -10,11 +10,12 @@ from PIL import Image
 from qdrant_client import AsyncQdrantClient
 
 from configs import get_settings
+from logging_config import configure_logging, get_logger
+
 from .controller import Controller
 from .embedder import ImageEmbedder
 from .fetcher import ImageFetcher
 from .indexer import RegionIndexer
-from logging_config import configure_logging, get_logger
 from .model import Response
 from .regions import discover_region_files, load_region_payloads
 from .repository import VectorRepository

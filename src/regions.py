@@ -6,6 +6,7 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from logging_config import get_logger
+
 from .schemas import QdrantPayload
 
 logger = get_logger(__name__)
