@@ -19,7 +19,7 @@ concurrency:
 
 env:
   IMAGE_NAME: lucasboillot/greenhub
-  DEPLOY_SERVICE: ia
+  DEPLOY_SERVICE: ai
 
 jobs:
   quality:
@@ -64,6 +64,10 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      
+      - name: Extract commit SHA
+        id: vars
+        run: echo "SHA_SHORT=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: Configurer Docker Buildx
         uses: docker/setup-buildx-action@v3
