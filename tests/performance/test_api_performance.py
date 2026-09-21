@@ -146,7 +146,8 @@ async def issue_request(
         progress.update(1)
         if report.latencies:
             progress.set_postfix(
-                rps=f"{len(report.latencies) / max(time.perf_counter() - report.started_at, 1e-9):.1f}",
+                rps=f"{len(report.latencies) / max(time.perf_counter()
+                                                   - report.started_at, 1e-9):.1f}",
                 mean=f"{report.mean_latency_ms:.0f}ms",
                 err=report.failures,
             )

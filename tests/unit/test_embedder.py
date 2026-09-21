@@ -7,8 +7,8 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
-from torch import ones, zeros 
 from PIL import Image
+from torch import ones, zeros
 
 from src.embedder import ImageEmbedder
 

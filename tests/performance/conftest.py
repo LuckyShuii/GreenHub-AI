@@ -4,10 +4,8 @@ from __future__ import annotations
 
 import os
 from collections.abc import AsyncIterator
-from typing import Any
 
 import httpx
-import pytest
 import pytest_asyncio
 
 BASE_URL: str = os.getenv("PERF_BASE_URL", "http://127.0.0.1:8000")
