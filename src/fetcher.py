@@ -5,12 +5,13 @@ from __future__ import annotations
 import asyncio
 import io
 import logging
+import time
 from pathlib import Path
 
 import httpx
 from ddgs import DDGS
 from PIL import Image, UnidentifiedImageError
-import time
+
 logger = logging.getLogger(__name__)
 
 

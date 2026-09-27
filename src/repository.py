@@ -4,6 +4,7 @@ from qdrant_client import AsyncQdrantClient
 from qdrant_client.http import models as qmodels
 
 from logging_config import get_logger
+
 from .schemas import QdrantPoint
 
 logger = get_logger(__name__)

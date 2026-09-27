@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from PIL import Image, UnidentifiedImageError
 
 from configs import get_settings
-from src.model import UnknownRegionError, NoMatchError
+from src.model import NoMatchError, UnknownRegionError
 from src.viewer import Viewer
 
 servapp = Viewer()

@@ -28,13 +28,6 @@ dev = [
     "ruff>=0.15.20",
 ]
 
-[tool.ruff]
-line-length = 79
-target-version = "py311"
-
-[tool.ruff.lint]
-select = ["E", "F", "I", "N", "D", "UP", "ANN"]
-
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 markers = [
