@@ -79,7 +79,7 @@ class Settings(BaseSettings):
 
     image_dir: Path = Field(
         default=Path("./image_backup"),
-        alias="IMAGE_BACKUP_DIR",
+        alias="IMAGE_DIR",
         description="Directory for image backups.",
     )
 
@@ -100,6 +100,7 @@ class Settings(BaseSettings):
         description="number of images per label",
     )
 
+
 @lru_cache
 def get_settings() -> Settings:
     """Return a cached singleton instance of the settings.
@@ -112,3 +113,4 @@ def get_settings() -> Settings:
 
     """
     return Settings()  # type: ignore
+
