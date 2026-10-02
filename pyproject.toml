@@ -33,3 +33,16 @@ asyncio_mode = "auto"
 markers = [
     "performance: throughput benchmark, excluded from the default run",
 ]
+
+[tool.coverage.run]
+omit = [
+    "*/test_*.py",
+    "*/tests/*",
+    "**/__init__.py",
+]
+
+[tool.coverage.report]
+exclude_also = [
+    "if __name__ == .__main__.:",
+    "pragma: no cover",
+]

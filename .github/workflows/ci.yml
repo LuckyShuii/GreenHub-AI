@@ -42,4 +42,4 @@ jobs:
       - name: Tests
         env:
           CI: "true"
-        run: uv run pytest
+        run: uv run pytest -v -s --cov
