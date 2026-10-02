@@ -6,6 +6,8 @@ import uvicorn
 from fastapi import File, Form, HTTPException, UploadFile, status
 from fastapi.responses import JSONResponse
 from PIL import Image, UnidentifiedImageError
+from fastapi.encoders import jsonable_encoder
+
 
 from configs import get_settings
 from src.model import NoMatchError, UnknownRegionError
@@ -57,7 +59,7 @@ async def upload_file(
             detail=str(exc),
         ) from exc
 
-    return JSONResponse(response)
+    return JSONResponse(jsonable_encoder(response))
 
 
 if __name__ == "__main__":

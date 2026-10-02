@@ -13,7 +13,7 @@ import pytest
 from tqdm import tqdm
 
 UPLOAD_COUNT: int = 10
-REQUESTS_PER_UPLOAD: int = 20
+REQUESTS_PER_UPLOAD: int = 150
 MIN_REQUESTS_PER_SECOND: float = 50.0
 CONCURRENCY: int = 16
 TARGET_REGION: str = "occitanie"
