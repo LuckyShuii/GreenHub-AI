@@ -4,10 +4,9 @@ import io
 
 import uvicorn
 from fastapi import File, Form, HTTPException, UploadFile, status
+from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from PIL import Image, UnidentifiedImageError
-from fastapi.encoders import jsonable_encoder
-
 
 from configs import get_settings
 from src.model import NoMatchError, UnknownRegionError

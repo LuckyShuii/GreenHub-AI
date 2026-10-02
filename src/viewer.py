@@ -2,7 +2,6 @@
 
 import asyncio
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
 
 import httpx
 from fastapi import FastAPI
@@ -32,7 +31,7 @@ async def run_startup_indexing() -> None:
     embedder = ImageEmbedder(settings.embedding_model_name, settings.device)
     repository = VectorRepository(client)
     semaphore = asyncio.Semaphore(settings.max_concurrent_uploads)
-    fetcher = ImageFetcher( 
+    fetcher = ImageFetcher(
         semaphore=semaphore,
         root_dir=settings.image_dir,)
     indexer = RegionIndexer(
