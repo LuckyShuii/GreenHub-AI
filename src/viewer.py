@@ -3,7 +3,6 @@
 import asyncio
 from collections.abc import AsyncIterator
 
-import httpx
 from fastapi import FastAPI
 from PIL import Image
 from qdrant_client import AsyncQdrantClient
@@ -45,15 +44,14 @@ async def run_startup_indexing() -> None:
         await client.close()
         return
 
-    async with httpx.AsyncClient() as http_client:
-        for json_path in region_files:
-            collection_name = json_path.stem
-            try:
-                payloads = load_region_payloads(json_path)
-            except ValueError as error:
+    for json_path in region_files:
+        collection_name = json_path.stem
+        try:
+            payloads = load_region_payloads(json_path)
+        except ValueError as error:
                 logger.error("Skipping region '%s': %s", collection_name, error)
                 continue
-            await indexer.index_region(collection_name, payloads, http_client)
+        await indexer.index_region(collection_name, payloads)
 
     await client.close()
     logger.info("Startup indexing finished for all regions.")
