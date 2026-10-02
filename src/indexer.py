@@ -72,7 +72,7 @@ class RegionIndexer:
             collection_name,
         )
         images = await self._fetcher.fetch(
-            client, payload.nom, self._images_per_label
+           payload.nom, self._images_per_label
         )
 
         inserted = 0

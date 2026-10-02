@@ -31,14 +31,10 @@ async def run_startup_indexing() -> None:
     )
     embedder = ImageEmbedder(settings.embedding_model_name, settings.device)
     repository = VectorRepository(client)
-    semaphore = asyncio.Semaphore(settings.max_concurrent_downloads)
-    fetcher = ImageFetcher(
-        settings.request_timeout,
-        settings.max_retries,
-        semaphore,
-        settings.save_images,
-        settings.image_backup_dir,
-    )
+    semaphore = asyncio.Semaphore(settings.max_concurrent_uploads)
+    fetcher = ImageFetcher( 
+        semaphore=semaphore,
+        root_dir=settings.image_dir,)
     indexer = RegionIndexer(
         embedder, fetcher, repository, settings.images_per_label
     )
@@ -64,7 +60,6 @@ async def run_startup_indexing() -> None:
     logger.info("Startup indexing finished for all regions.")
 
 
-@asynccontextmanager
 async def lifespan(app: "Viewer") -> AsyncIterator[None]:
     """Run multi-region indexing at server startup.
 
