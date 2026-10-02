@@ -2,8 +2,6 @@
 
 import asyncio
 
-import httpx
-
 from logging_config import get_logger
 
 from .embedder import ImageEmbedder
@@ -43,7 +41,6 @@ class RegionIndexer:
         collection_name: str,
         index: int,
         payload: QdrantPayload,
-        client: httpx.AsyncClient,
     ) -> int:
         """Index all images for a single waste payload.
 
@@ -105,7 +102,6 @@ class RegionIndexer:
         self,
         collection_name: str,
         payloads: list[QdrantPayload],
-        client: httpx.AsyncClient,
     ) -> None:
         """Index every payload of a region concurrently.
 
@@ -119,7 +115,7 @@ class RegionIndexer:
             collection_name, self._embedder.dimension
         )
         tasks = [
-            self._index_payload(collection_name, index, payload, client)
+            self._index_payload(collection_name, index, payload)
             for index, payload in enumerate(payloads)
         ]
         results = await asyncio.gather(*tasks)
