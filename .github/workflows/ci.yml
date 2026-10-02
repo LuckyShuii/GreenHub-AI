@@ -30,13 +30,8 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
 
-      - name: Export des dépendances de uv.lock
-        run: uv export --frozen --no-dev -o requirements.txt
-
       - name: Audit de sécurité des dépendances
-        uses: pypa/gh-action-pip-audit@v1.1.0
-        with:
-          inputs: requirements.txt
+        run: uv run pip-audit
 
       - name: Installer les dépendances
         run: uv sync --frozen
