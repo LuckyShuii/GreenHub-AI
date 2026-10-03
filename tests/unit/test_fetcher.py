@@ -1,295 +1,357 @@
-"""Unit tests for the resilient image fetcher."""
+"""Unit tests for the local dataset image fetcher."""
 
 from __future__ import annotations
 
 import asyncio
-import io
+from collections.abc import Iterator
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import Mock
 
-import httpx
 import pytest
 from PIL import Image
 
 from src.fetcher import ImageFetcher
 
 
-def _png_bytes(color: tuple[int, int, int] = (10, 10, 10)) -> bytes:
-    """Encode a tiny PNG image.
+def _write_image(path: Path, mode: str = "RGB") -> None:
+    """Create a small valid image at a path.
 
     Args:
-        color: RGB fill color.
+        path: Destination image path.
+        mode: Pillow image mode to create.
 
-    Returns:
-        PNG-encoded bytes.
     """
-    buffer = io.BytesIO()
-    Image.new("RGB", (8, 8), color=color).save(buffer, format="PNG")
-    return buffer.getvalue()
+    color: int | tuple[int, int, int] = 1 if mode == "L" else (1, 2, 3)
+    image: Image.Image = Image.new(mode, (4, 4), color=color)
+    image.save(path)
 
 
-@pytest.fixture
-def fetcher(tmp_path: Path) -> ImageFetcher:
-    """Build a fetcher writing backups into a temporary directory.
+def _fetcher(root_dir: Path) -> ImageFetcher:
+    """Create a fetcher for a dataset root.
 
     Args:
-        tmp_path: Temporary directory fixture.
+        root_dir: Dataset root directory.
 
     Returns:
-        A configured ImageFetcher instance.
+        A configured image fetcher.
+
     """
-    return ImageFetcher(
-        timeout=1,
-        max_retries=3,
-        semaphore=asyncio.Semaphore(4),
-        save_images=False,
-        backup_dir=tmp_path / "backup",
-    )
+    return ImageFetcher(root_dir, asyncio.Semaphore(4))
 
 
-class TestSearchUrls:
-    """Behaviour of the DuckDuckGo search wrapper."""
+class TestOpenDir:
+    """Tests for dataset discovery and indexing."""
 
-    def test_appends_waste_keyword_to_query(
-        self, fetcher: ImageFetcher
+    def test_indexes_sorted_images_and_ignores_non_images(
+        self, tmp_path: Path
     ) -> None:
-        """The search query is suffixed to bias results toward waste.
+        """Discovery sorts labels and files and filters unsupported entries.
 
         Args:
-            fetcher: Fetcher under test.
+            tmp_path: Temporary directory fixture.
+
         """
-        ddgs_instance = MagicMock()
-        ddgs_instance.images.return_value = [
-            {"image": "https://example.test/a.jpg"}
+        first: Path = tmp_path / "alpha"
+        second: Path = tmp_path / "zeta"
+        first.mkdir()
+        second.mkdir()
+        _write_image(first / "b.PNG")
+        _write_image(first / "a.jpg")
+        _write_image(second / "c.tIfF")
+        (first / "notes.txt").write_text("not an image")
+        (tmp_path / "root.png").write_bytes(b"ignored")
+
+        result: dict[str, list[Path]] = _fetcher(tmp_path).open_dir()
+
+        assert list(result) == ["alpha", "zeta"]
+        assert result["alpha"] == [first / "a.jpg", first / "b.PNG"]
+        assert result["zeta"] == [second / "c.tIfF"]
+
+    def test_samples_associate_each_image_with_label(
+        self, tmp_path: Path
+    ) -> None:
+        """Samples pair every discovered image with its directory label.
+
+        Args:
+            tmp_path: Temporary directory fixture.
+
+        """
+        label: Path = tmp_path / "paper"
+        label.mkdir()
+        _write_image(label / "one.png")
+        _write_image(label / "two.webp")
+
+        assert _fetcher(tmp_path).samples() == [
+            (label / "one.png", "paper"),
+            (label / "two.webp", "paper"),
         ]
-        context = MagicMock()
-        context.__enter__.return_value = ddgs_instance
 
-        with (
-            patch("src.fetcher.DDGS", return_value=context),
-            patch("src.fetcher.time.sleep"),
-        ):
-            urls = fetcher._search_urls("carton", 1)
-
-        ddgs_instance.images.assert_called_once_with(
-            "carton dechet", max_results=1
-        )
-        assert urls == ["https://example.test/a.jpg"]
-
-    def test_returns_empty_list_on_search_failure(
-        self, fetcher: ImageFetcher
-    ) -> None:
-        """Search backend errors degrade to an empty result list.
+    def test_open_dir_caches_index(self, tmp_path: Path) -> None:
+        """Subsequent reads use the existing index instead of rescanning.
 
         Args:
-            fetcher: Fetcher under test.
+            tmp_path: Temporary directory fixture.
+
         """
-        with (
-            patch("src.fetcher.DDGS", side_effect=RuntimeError("rate limit")),
-            patch("src.fetcher.time.sleep"),
-        ):
-            assert fetcher._search_urls("carton", 3) == []
+        label: Path = tmp_path / "paper"
+        label.mkdir()
+        _write_image(label / "one.png")
+        fetcher: ImageFetcher = _fetcher(tmp_path)
+        first: dict[str, list[Path]] = fetcher.open_dir()
+        _write_image(label / "two.png")
 
+        assert fetcher.samples() == [(label / "one.png", "paper")]
+        assert fetcher.open_dir() is not first
+        assert len(fetcher.samples()) == 2
 
-class TestDownloadOne:
-    """Retry and decoding behaviour of single-image downloads."""
-
-    @pytest.mark.asyncio
-    async def test_returns_decoded_image_on_success(
-        self, fetcher: ImageFetcher
+    def test_empty_label_is_ignored_with_warning(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
-        """A 200 response with valid bytes yields an RGB image.
+        """Empty label directories are skipped and logged.
 
         Args:
-            fetcher: Fetcher under test.
+            tmp_path: Temporary directory fixture.
+            caplog: Log capture fixture.
+
         """
-        transport = httpx.MockTransport(
-            lambda request: httpx.Response(200, content=_png_bytes())
+        (tmp_path / "empty").mkdir()
+
+        assert _fetcher(tmp_path).open_dir() == {}
+        assert "No image found for label 'empty'." in caplog.text
+
+    def test_root_without_label_directories_returns_empty(
+        self, tmp_path: Path
+    ) -> None:
+        """A root containing no subdirectories has an empty index.
+
+        Args:
+            tmp_path: Temporary directory fixture.
+
+        """
+        (tmp_path / "file.txt").write_text("ignored")
+
+        assert _fetcher(tmp_path).open_dir() == {}
+
+    def test_root_iterdir_error_returns_empty(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A root listing permission error is converted to an empty index.
+
+        Args:
+            tmp_path: Temporary directory fixture.
+            monkeypatch: Pytest monkeypatch fixture.
+
+        """
+
+        def raise_permission_error(path: Path) -> Iterator[Path]:
+            """Raise a permission error for a patched directory listing.
+
+            Args:
+                path: Directory whose contents would be listed.
+
+            Returns:
+                Never returns normally.
+
+            """
+            raise PermissionError(path)
+
+        monkeypatch.setattr(Path, "iterdir", raise_permission_error)
+
+        assert _fetcher(tmp_path).open_dir() == {}
+
+    def test_label_iterdir_error_skips_label(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A single unreadable label is omitted from the index.
+
+        Args:
+            tmp_path: Temporary directory fixture.
+            monkeypatch: Pytest monkeypatch fixture.
+
+        """
+        good: Path = tmp_path / "good"
+        bad: Path = tmp_path / "bad"
+        good.mkdir()
+        bad.mkdir()
+        _write_image(good / "good.png")
+        original = Path.iterdir
+
+        def list_or_raise(path: Path) -> Iterator[Path]:
+            """Raise only while listing the selected label directory.
+
+            Args:
+                path: Directory whose contents would be listed.
+
+            Returns:
+                The original directory iterator for other paths.
+
+            """
+            if path == bad:
+                raise PermissionError(path)
+            return original(path)
+
+        monkeypatch.setattr(Path, "iterdir", list_or_raise)
+
+        assert list(_fetcher(tmp_path).open_dir()) == ["good"]
+
+    def test_missing_root_raises(self, tmp_path: Path) -> None:
+        """A missing dataset root raises FileNotFoundError.
+
+        Args:
+            tmp_path: Temporary directory fixture.
+
+        """
+        with pytest.raises(FileNotFoundError):
+            _fetcher(tmp_path / "missing").open_dir()
+
+    def test_file_root_raises(self, tmp_path: Path) -> None:
+        """A file used as root raises NotADirectoryError.
+
+        Args:
+            tmp_path: Temporary directory fixture.
+
+        """
+        root: Path = tmp_path / "root"
+        root.write_text("not a directory")
+
+        with pytest.raises(NotADirectoryError):
+            _fetcher(root).open_dir()
+
+
+class TestResolvePaths:
+    """Tests for label resolution."""
+
+    def test_normalizes_label_for_matching(self, tmp_path: Path) -> None:
+        """Punctuation and case differences still resolve a label.
+
+        Args:
+            tmp_path: Temporary directory fixture.
+
+        """
+        label: Path = tmp_path / "Glass Bottle"
+        label.mkdir()
+        _write_image(label / "one.png")
+        fetcher: ImageFetcher = _fetcher(tmp_path)
+
+        assert fetcher._resolve_paths("glass-bottle") == [label / "one.png"]
+
+    def test_unknown_label_returns_empty(self, tmp_path: Path) -> None:
+        """Unknown labels resolve to no paths.
+
+        Args:
+            tmp_path: Temporary directory fixture.
+
+        """
+        assert _fetcher(tmp_path)._resolve_paths("unknown") == []
+
+
+class TestLoadImage:
+    """Tests for synchronous image decoding."""
+
+    def test_corrupt_image_returns_none(self, tmp_path: Path) -> None:
+        """Corrupt image bytes are handled without raising.
+
+        Args:
+            tmp_path: Temporary directory fixture.
+
+        """
+        path: Path = tmp_path / "corrupt.png"
+        path.write_bytes(b"invalid image")
+
+        assert ImageFetcher._load_image(path) is None
+
+    def test_decompression_bomb_returns_none(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Pillow decompression bomb errors are handled without raising.
+
+        Args:
+            tmp_path: Temporary directory fixture.
+            monkeypatch: Pytest monkeypatch fixture.
+
+        """
+        path: Path = tmp_path / "bomb.png"
+        path.write_bytes(b"placeholder")
+        open_mock: Mock = Mock(
+            side_effect=Image.DecompressionBombError("bomb")
         )
-        async with httpx.AsyncClient(transport=transport) as client:
-            image = await fetcher._download_one(
-                client, "https://example.test/a.png"
-            )
+        monkeypatch.setattr("src.fetcher.Image.open", open_mock)
+
+        assert ImageFetcher._load_image(path) is None
+
+    def test_load_image_converts_to_rgb(self, tmp_path: Path) -> None:
+        """Images in another mode are returned as RGB.
+
+        Args:
+            tmp_path: Temporary directory fixture.
+
+        """
+        path: Path = tmp_path / "gray.png"
+        _write_image(path, mode="L")
+
+        image: Image.Image | None = ImageFetcher._load_image(path)
 
         assert image is not None
         assert image.mode == "RGB"
 
-    @pytest.mark.asyncio
-    async def test_retries_until_success(
-        self, fetcher: ImageFetcher
-    ) -> None:
-        """Transient failures are retried up to the configured limit.
 
-        Args:
-            fetcher: Fetcher under test.
-        """
-        attempts: list[int] = []
-
-        def handler(request: httpx.Request) -> httpx.Response:
-            attempts.append(1)
-            if len(attempts) < 3:
-                return httpx.Response(503)
-            return httpx.Response(200, content=_png_bytes())
-
-        transport = httpx.MockTransport(handler)
-        async with httpx.AsyncClient(transport=transport) as client:
-            image = await fetcher._download_one(
-                client, "https://example.test/a.png"
-            )
-
-        assert image is not None
-        assert len(attempts) == 3
+class TestFetch:
+    """Tests for asynchronous image loading."""
 
     @pytest.mark.asyncio
-    async def test_returns_none_after_exhausting_retries(
-        self, fetcher: ImageFetcher
-    ) -> None:
-        """Persistent failures resolve to None rather than raising.
-
-        Args:
-            fetcher: Fetcher under test.
-        """
-        transport = httpx.MockTransport(
-            lambda request: httpx.Response(404)
-        )
-        async with httpx.AsyncClient(transport=transport) as client:
-            image = await fetcher._download_one(
-                client, "https://example.test/missing.png"
-            )
-
-        assert image is None
-
-    @pytest.mark.asyncio
-    async def test_returns_none_for_undecodable_payload(
-        self, fetcher: ImageFetcher
-    ) -> None:
-        """Non-image bytes are handled without propagating exceptions.
-
-        Args:
-            fetcher: Fetcher under test.
-        """
-        transport = httpx.MockTransport(
-            lambda request: httpx.Response(200, content=b"garbage")
-        )
-        async with httpx.AsyncClient(transport=transport) as client:
-            image = await fetcher._download_one(
-                client, "https://example.test/a.png"
-            )
-
-        assert image is None
-
-    @pytest.mark.asyncio
-    async def test_respects_concurrency_semaphore(
+    async def test_fetch_returns_valid_images_and_applies_count(
         self, tmp_path: Path
     ) -> None:
-        """In-flight downloads never exceed the semaphore capacity.
+        """Fetch limits paths to count before loading them.
 
         Args:
             tmp_path: Temporary directory fixture.
+
         """
-        limit = 2
-        current = 0
-        peak = 0
+        label: Path = tmp_path / "photos"
+        label.mkdir()
+        _write_image(label / "a.png")
+        _write_image(label / "b.png")
+        (label / "c.png").write_bytes(b"bad")
 
-        async def handler(request: httpx.Request) -> httpx.Response:
-            nonlocal current, peak
-            current += 1
-            peak = max(peak, current)
-            await asyncio.sleep(0.01)
-            current -= 1
-            return httpx.Response(200, content=_png_bytes())
-
-        fetcher = ImageFetcher(
-            timeout=1,
-            max_retries=1,
-            semaphore=asyncio.Semaphore(limit),
-            save_images=False,
-            backup_dir=tmp_path,
+        images: list[Image.Image] = await _fetcher(tmp_path).fetch(
+            "photos", 2
         )
-        transport = httpx.MockTransport(handler)
-        async with httpx.AsyncClient(transport=transport) as client:
-            await asyncio.gather(
-                *(
-                    fetcher._download_one(
-                        client, f"https://example.test/{index}.png"
-                    )
-                    for index in range(10)
-                )
-            )
-
-        assert peak <= limit
-
-
-class TestPersist:
-    """Local backup behaviour."""
-
-    def test_writes_sanitized_directory(
-        self, fetcher: ImageFetcher, sample_image: Image.Image
-    ) -> None:
-        """Non-alphanumeric label characters become underscores.
-
-        Args:
-            fetcher: Fetcher under test.
-            sample_image: Image to persist.
-        """
-        fetcher._persist(sample_image, "bouteille en verre", 0)
-
-        expected = fetcher._backup_dir / "bouteille_en_verre" / "0.jpg"
-        assert expected.exists()
-
-    def test_creates_nested_directories(
-        self, fetcher: ImageFetcher, sample_image: Image.Image
-    ) -> None:
-        """Missing parent directories are created on demand.
-
-        Args:
-            fetcher: Fetcher under test.
-            sample_image: Image to persist.
-        """
-        fetcher._persist(sample_image, "carton", 4)
-        assert (fetcher._backup_dir / "carton").is_dir()
-
-
-class TestFetch:
-    """End-to-end behaviour of the public fetch method."""
-
-    @pytest.mark.asyncio
-    async def test_filters_out_failed_downloads(
-        self, fetcher: ImageFetcher
-    ) -> None:
-        """Only successfully decoded images are returned.
-
-        Args:
-            fetcher: Fetcher under test.
-        """
-        urls = [f"https://example.test/{index}.png" for index in range(4)]
-
-        def handler(request: httpx.Request) -> httpx.Response:
-            if request.url.path.endswith(("0.png", "2.png")):
-                return httpx.Response(200, content=_png_bytes())
-            return httpx.Response(500)
-
-        with patch.object(fetcher, "_search_urls", return_value=urls):
-            transport = httpx.MockTransport(handler)
-            async with httpx.AsyncClient(transport=transport) as client:
-                images = await fetcher.fetch(client, "carton", 4)
 
         assert len(images) == 2
+        assert all(image.mode == "RGB" for image in images)
 
     @pytest.mark.asyncio
-    async def test_returns_empty_when_search_yields_nothing(
-        self, fetcher: ImageFetcher
+    async def test_fetch_returns_only_valid_images_after_corruption(
+        self, tmp_path: Path
     ) -> None:
-        """No search results produce no images and no requests.
+        """Fetch returns valid images when one selected file is corrupt.
 
         Args:
-            fetcher: Fetcher under test.
-        """
-        with patch.object(fetcher, "_search_urls", return_value=[]):
-            transport = httpx.MockTransport(
-                lambda request: httpx.Response(200, content=_png_bytes())
-            )
-            async with httpx.AsyncClient(transport=transport) as client:
-                images = await fetcher.fetch(client, "inconnu", 3)
+            tmp_path: Temporary directory fixture.
 
-        assert images == []
+        """
+        label: Path = tmp_path / "photos"
+        label.mkdir()
+        _write_image(label / "a.png")
+        (label / "b.png").write_bytes(b"bad")
+
+        images: list[Image.Image] = await _fetcher(tmp_path).fetch(
+            "photos", 5
+        )
+
+        assert len(images) == 1
+
+    @pytest.mark.asyncio
+    async def test_fetch_unknown_label_returns_empty_with_warning(
+        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """An unknown label produces no images and a warning.
+
+        Args:
+            tmp_path: Temporary directory fixture.
+            caplog: Log capture fixture.
+
+        """
+        assert await _fetcher(tmp_path).fetch("unknown", 2) == []
+        assert "No local images available for 'unknown'." in caplog.text

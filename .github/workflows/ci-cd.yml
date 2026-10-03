@@ -24,6 +24,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Récupérer le code
         uses: actions/checkout@v4
 
@@ -32,6 +33,9 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: uv.lock
+    
+      - name: Audit de sécurité des dépendances
+        run: uv run pip-audit
 
       - name: Installer les dépendances
         run: uv sync --frozen
@@ -42,15 +46,17 @@ jobs:
       - name: Tests
         env:
           CI: "true"
-        run: uv run pytest
+        run: uv run pytest -v --cov
 
   docker:
     name: Build & push Docker
     runs-on: ubuntu-latest
     needs: quality
-
+  
     permissions:
       contents: read
+      id-token: write 
+
 
     steps:
       - name: Récupérer le code

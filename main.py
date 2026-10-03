@@ -3,7 +3,8 @@
 import io
 
 import uvicorn
-from fastapi import File, Form, HTTPException, UploadFile, status
+from fastapi import File, HTTPException, UploadFile, status
+from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from PIL import Image, UnidentifiedImageError
 
@@ -17,7 +18,7 @@ servapp = Viewer()
 @servapp.post("/greener/upload/dechets")
 async def upload_file(
     file: UploadFile = File(...),
-    region: str = Form(...),
+    region: str = "ile_de_france",
 ) -> JSONResponse:
     """Classify an uploaded waste image for a given region.
 
@@ -57,7 +58,7 @@ async def upload_file(
             detail=str(exc),
         ) from exc
 
-    return JSONResponse(response)
+    return JSONResponse(jsonable_encoder(response))
 
 
 if __name__ == "__main__":

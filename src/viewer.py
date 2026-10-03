@@ -2,9 +2,7 @@
 
 import asyncio
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
 
-import httpx
 from fastapi import FastAPI
 from PIL import Image
 from qdrant_client import AsyncQdrantClient
@@ -31,14 +29,10 @@ async def run_startup_indexing() -> None:
     )
     embedder = ImageEmbedder(settings.embedding_model_name, settings.device)
     repository = VectorRepository(client)
-    semaphore = asyncio.Semaphore(settings.max_concurrent_downloads)
+    semaphore = asyncio.Semaphore(settings.max_concurrent_uploads)
     fetcher = ImageFetcher(
-        settings.request_timeout,
-        settings.max_retries,
-        semaphore,
-        settings.save_images,
-        settings.image_backup_dir,
-    )
+        semaphore=semaphore,
+        root_dir=settings.image_dir,)
     indexer = RegionIndexer(
         embedder, fetcher, repository, settings.images_per_label
     )
@@ -50,21 +44,19 @@ async def run_startup_indexing() -> None:
         await client.close()
         return
 
-    async with httpx.AsyncClient() as http_client:
-        for json_path in region_files:
-            collection_name = json_path.stem
-            try:
-                payloads = load_region_payloads(json_path)
-            except ValueError as error:
+    for json_path in region_files:
+        collection_name = json_path.stem
+        try:
+            payloads = load_region_payloads(json_path)
+        except ValueError as error:
                 logger.error("Skipping region '%s': %s", collection_name, error)
                 continue
-            await indexer.index_region(collection_name, payloads, http_client)
+        await indexer.index_region(collection_name, payloads)
 
     await client.close()
     logger.info("Startup indexing finished for all regions.")
 
 
-@asynccontextmanager
 async def lifespan(app: "Viewer") -> AsyncIterator[None]:
     """Run multi-region indexing at server startup.
 

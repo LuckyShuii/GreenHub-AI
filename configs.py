@@ -70,49 +70,34 @@ class Settings(BaseSettings):
         alias="DATA_DIR",
         description="Directory holding one JSON file per region.",
     )
-    images_per_label: int = Field(
-        default=5,
-        alias="IMAGES_PER_LABEL",
-        ge=1,
-        description="Number of images fetched per label.",
-    )
-    request_timeout: int = Field(
-        default=10,
-        alias="REQUEST_TIMEOUT",
-        ge=1,
-        description="Image download timeout in seconds.",
-    )
-    max_retries: int = Field(
-        default=3,
-        alias="MAX_RETRIES",
-        ge=1,
-        description="Maximum download attempts per image.",
-    )
-    max_concurrent_downloads: int = Field(
-        default=10,
-        alias="MAX_CONCURRENT_DOWNLOADS",
-        ge=1,
-        description="Maximum simultaneous downloads.",
-    )
+
     device: str = Field(
         default="cpu",
         alias="DEVICE",
         description="Torch device for embedding inference.",
     )
-    save_images: bool = Field(
-        default=True,
-        alias="SAVE_IMAGES",
-        description="Persist downloaded images locally.",
-    )
-    image_backup_dir: Path = Field(
+
+    image_dir: Path = Field(
         default=Path("./image_backup"),
-        alias="IMAGE_BACKUP_DIR",
+        alias="IMAGE_DIR",
         description="Directory for image backups.",
     )
+
     log_level: str = Field(
         default="INFO",
         alias="LOG_LEVEL",
         description="Logging verbosity level.",
+    )
+
+    max_concurrent_uploads: int = Field(
+        default=10,
+        alias="MAX_CONCURRENT_UPLOADS",
+        description=" Max concurrent image upoads.",
+    )
+    images_per_label: int = Field(
+        default=3,
+        alias="IMAGES_PER_LABEL",
+        description="number of images per label",
     )
 
 
@@ -128,3 +113,4 @@ def get_settings() -> Settings:
 
     """
     return Settings()  # type: ignore
+
