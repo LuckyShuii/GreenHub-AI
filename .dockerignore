@@ -1,3 +1,5 @@
 .env
 *.pyc
 __pycache__
+# Reference-image dataset: mounted at runtime, never baked into the image.
+image_dir
