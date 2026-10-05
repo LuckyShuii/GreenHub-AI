@@ -1,291 +1,260 @@
 # Greener — classification des déchets par région
 
-Greener est une API FastAPI de classification d'images de déchets. Au démarrage, l'application découvre des fichiers JSON de régions, recherche des images de référence, les transforme en vecteurs avec DINOv2 et les stocke dans des collections Qdrant séparées par région. Une image envoyée à l'API est ensuite comparée au contenu de la collection de la région demandée afin de retourner le matériau reconnu, la couleur de poubelle associée et le score de similarité.
+Pipeline de classification d'images de déchets. L'application encode les images avec DINOv2, stocke les vecteurs de référence dans Qdrant et retourne, pour une région donnée, le matériau reconnu, la couleur de poubelle associée et le score de similarité.
 
-## Architecture
+## Table des matières
 
-```text
-.
-├── main.py                 # Entrée de l'application et endpoint HTTP
-├── configs.py              # Paramètres typés chargés depuis l'environnement et .env
-├── logging_config.py       # Configuration centralisée des logs
-├── viewer.py               # Application FastAPI, cycle de vie et indexation au démarrage
-├── Controller.py            # Couche de coordination entre la vue et le modèle
-├── model.py                # Embedding de la requête et recherche de similarité Qdrant
-├── indexer.py              # Orchestration de l'indexation multi-région
-├── fetcher.py              # Recherche et téléchargement des images de référence
-├── embedder.py             # Encodage d'images avec DINOv2 et PyTorch
-├── repository.py           # Accès asynchrone aux collections et points Qdrant
-├── regions.py              # Découverte et validation des fichiers JSON de régions
-├── schemas.py              # Modèles Pydantic des données et points vectoriels
-├── docker-compose.yaml     # Services web et qdrant
-├── dockerfile              # Image Python de l'API
-└── qdrant.dockerfile       # Image Qdrant personnalisée et healthcheck
+- [Vue d'ensemble](#vue-densemble)
+- [Structure attendue des données](#structure-attendue-des-données)
+- [Prérequis](#prérequis)
+- [OBLIGATOIRE — télécharger et décompresser le dataset](#obligatoire--télécharger-et-décompresser-le-dataset)
+- [Configuration](#configuration)
+- [Installation et utilisation locale](#installation-et-utilisation-locale)
+- [Docker Compose](#docker-compose)
+- [API HTTP](#api-http)
+- [Architecture et flux](#architecture-et-flux)
+- [Dépannage](#dépannage)
+- [Dépendances](#dépendances)
+
+## Vue d'ensemble
+
+Au démarrage, l'application :
+
+1. charge les fichiers JSON de régions depuis `DATA_DIR` ;
+2. valide chaque entrée avec Pydantic (`nom`, `region`, `poubelle`) ;
+3. parcourt les images locales sous `IMAGE_DIR`, regroupées par libellé ;
+4. encode les images avec le modèle Hugging Face `facebook/dinov2-large` (ou le modèle configuré) ;
+5. crée une collection Qdrant par région, avec des vecteurs de distance cosinus, puis indexe les références ;
+6. expose l'API FastAPI.
+
+Une requête d'inférence encode l'image envoyée, interroge la collection Qdrant de la région demandée et renvoie le meilleur résultat.
+
+## Structure attendue des données
+
+### Fichiers JSON de régions
+
+`DATA_DIR` doit contenir directement des fichiers `*.json`. Le nom du fichier, sans extension, devient le nom de la collection Qdrant et la valeur de `region`. La racine de chaque JSON doit être une liste d'objets contenant au minimum :
+
+```json
+[
+  {
+    "nom": "bouteille en plastique",
+    "poubelle": "jaune"
+  }
+]
 ```
 
-Rôles détaillés :
+Les entrées invalides sont ignorées et journalisées. Les champs `nom`, `region` et `poubelle` doivent être des chaînes non vides ; `region` est ajouté par le code à partir du nom du fichier.
 
-- `main.py` instancie `Viewer` sous le nom `servapp`, définit l'endpoint multipart et lance Uvicorn quand le fichier est exécuté directement.
-- `viewer.py` configure le lifespan FastAPI, déclenche l'indexation de toutes les régions avant de rendre l'application disponible et délègue les requêtes à `Controller`.
-- `Controller.py` fait le lien entre la vue et `Model`.
-- `model.py` vérifie la collection de la région, calcule l'embedding de l'image et interroge Qdrant avec une limite de 1 résultat.
-- `indexer.py` crée les collections, vérifie les identifiants déjà présents et orchestre la récupération, l'embedding et l'upsert des images par région.
-- `fetcher.py` utilise `DDGS` pour rechercher des URLs d'images, `httpx` pour les télécharger avec retries et limite de concurrence, et peut enregistrer une copie JPEG locale.
-- `embedder.py` charge le processeur et le modèle Hugging Face configuré, puis produit un vecteur normalisé à partir du premier token de `last_hidden_state`.
-- `repository.py` utilise `AsyncQdrantClient`, crée des collections en distance cosinus et écrit des `PointStruct` contenant le vecteur et le payload.
-- `regions.py` lit les fichiers `*.json`, impose une racine de type liste et ignore les entrées invalides après validation Pydantic.
-- `schemas.py` définit `WasteItem`, `QdrantPayload` (`nom`, `region`, `poubelle`) et `QdrantPoint`.
+### Images de référence
+
+`IMAGE_DIR` est la racine du dataset d'images. Chaque sous-répertoire immédiat représente un libellé et contient des fichiers `.jpg`, `.jpeg`, `.png`, `.webp`, `.bmp` ou `.gif` :
+
+```text
+<IMAGE_DIR>/
+├── bouteille_en_plastique/
+│   ├── image-001.jpg
+│   └── image-002.png
+└── canette/
+    └── image-001.jpg
+```
+
+Le code normalise les libellés en minuscules et remplace les caractères non alphanumériques par `_` lors de la résolution d'un libellé.
 
 ## Prérequis
 
-- Python 3.13, conformément aux images utilisées par `dockerfile`.
-- Les dépendances Python importées par le code : FastAPI, Uvicorn, Pydantic, `pydantic-settings`, `httpx`, Pillow, NumPy, PyTorch, Transformers, `qdrant-client` et `ddgs`.
-- Un serveur Qdrant accessible avec le host et le port configurés.
-- Un répertoire de données contenant un ou plusieurs fichiers JSON de région. Chaque fichier doit contenir une liste d'objets ayant au minimum les clés `nom` et `poubelle`; le nom du fichier sans extension devient le nom de la région et de la collection Qdrant.
-- Accès réseau à la recherche d'images et au téléchargement des images de référence lors de l'indexation.
-- Pour le mode Docker, Docker avec Docker Compose et les fichiers de construction attendus par `dockerfile` (`pyproject.toml`, `uv.lock` et un répertoire `src`).
+- Python `>=3.13` ;
+- `uv` pour synchroniser les dépendances (ou un environnement virtuel Python équivalent) ;
+- Docker et Docker Compose v2 si Qdrant est exécuté avec Compose ;
+- suffisamment d'espace disque pour le dataset, les poids DINOv2 et le stockage Qdrant ;
+- accès réseau initial pour télécharger les dépendances et le modèle Hugging Face.
+
+## OBLIGATOIRE — télécharger et décompresser le dataset
+
+Le projet ne peut pas fonctionner sans le dataset. Avant toute installation ou tout lancement, télécharger l'archive TAR du dataset depuis :
+
+<https://drive.google.com/file/d/1VuH2IHp0lqivDrCTyw7hUcUPawtd0JDd/view>
+
+Après téléchargement, décompresser l'archive dans le répertoire attendu par le code. Le chemin dépend du mode d'exécution :
+
+- **Exécution locale** : `IMAGE_DIR` vaut par défaut `./image_backup`, donc le dataset d'images doit être sous `./image_backup/` ;
+- **Docker Compose** : le volume `./image_dir:/greener/image_dir` est déclaré pour le conteneur ; configurer `IMAGE_DIR=/greener/image_dir` dans l'environnement du service `web`.
+
+Exemple :
+
+```bash
+tar -xf <archive-du-dataset>.tar -C ./
+```
+
+Vérifier ensuite que les sous-répertoires de libellés sont directement accessibles sous `./image_dir/`, et non dans un niveau de répertoire supplémentaire. Les fichiers JSON de régions sont distincts : ils doivent être directement sous `DATA_DIR` — `./data/` en local ou `/greener/data` dans le conteneur.
 
 ## Configuration
 
-La configuration applicative est chargée par `Settings` depuis `.env` et l'environnement, avec des valeurs par défaut dans `configs.py`. Les valeurs ne sont pas reproduites ici.
+Les paramètres sont lus par `pydantic-settings` depuis `.env` et les variables d'environnement. Les noms ci-dessous sont les alias déclarés dans `configs.py`.
 
-| Variable | Rôle |
+| Variable | Défaut | Rôle |
+|---|---:|---|
+| `AI_HOST` | `0.0.0.0` | Adresse d'écoute de l'API. |
+| `AI_PORT` | `8000` | Port d'écoute de l'API. |
+| `EMBEDDING_MODEL_NAME` | `facebook/dinov2-small` | Identifiant du modèle d'embedding Hugging Face. |
+| `QDRANT_HOST` | `localhost` | Hôte Qdrant. En Compose, utiliser `qdrant`. |
+| `QDRANT_PORT` | `6333` | Port HTTP Qdrant. |
+| `DATA_DIR` | `./data` | Répertoire contenant directement les JSON de régions. |
+| `IMAGE_DIR` | `./image_dir` | Répertoire racine des images de référence. |
+| `DEVICE` | `cpu` | Périphérique PyTorch (`cpu` ou `cuda`). |
+| `MAX_CONCURRENT_UPLOADS` | `10` | Taille du sémaphore utilisé pour les chargements d'images. |
+| `IMAGES_PER_LABEL` | `3` | Nombre maximal d'images chargées par libellé lors de l'indexation. |
+| `LOG_LEVEL` | `INFO` | Niveau des journaux applicatifs. |
+
+Variables de l'ancienne version **qui ne sont plus utilisées par l'application** : `REQUEST_TIMEOUT`, `MAX_RETRIES`, `MAX_CONCURRENT_DOWNLOADS`, `SAVE_IMAGES`, `IMAGE_BACKUP_DIR`.
+
+Variables utilisées uniquement par Compose et `qdrant.dockerfile` :
+
+| Variable | Utilisation |
 |---|---|
-| `EMBEDDING_MODEL_NAME` | Identifiant du modèle d'embedding Hugging Face |
-| `AI_HOST` | Adresse d'écoute de l'API |
-| `AI_PORT` | Port d'écoute de l'API |
-| `QDRANT_HOST` | Hôte Qdrant |
-| `QDRANT_PORT` | Port HTTP Qdrant utilisé par le client |
-| `DATA_DIR` | Répertoire des JSON de régions |
-| `IMAGES_PER_LABEL` | Nombre d'images recherchées par libellé |
-| `REQUEST_TIMEOUT` | Timeout des téléchargements, en secondes |
-| `MAX_RETRIES` | Nombre maximal d'essais par téléchargement |
-| `MAX_CONCURRENT_DOWNLOADS` | Nombre maximal de téléchargements simultanés |
-| `DEVICE` | Périphérique PyTorch |
-| `SAVE_IMAGES` | Active la sauvegarde locale des images |
-| `IMAGE_BACKUP_DIR` | Répertoire des sauvegardes d'images |
-| `LOG_LEVEL` | Niveau des logs applicatifs |
-| `QDRANT_VERSION` | Version utilisée comme argument de build de l'image Qdrant |
-| `QDRANT_GRPC_PORT` | Port gRPC Qdrant exposé par Compose |
-| `QDRANT_LOG_LEVEL` | Niveau de logs Qdrant injecté dans le service Qdrant |
+| `QDRANT_VERSION` | Argument de build de l'image Qdrant ; défaut `v1.18.2`. |
+| `QDRANT_GRPC_PORT` | Port gRPC publié par Compose. |
+| `QDRANT_LOG_LEVEL` | Niveau de journalisation de Qdrant. |
 
-Pour un fichier `.env`, utiliser des placeholders sans y inscrire de secrets dans la documentation :
+Exemple de `.env` pour un lancement local :
 
 ```dotenv
-EMBEDDING_MODEL_NAME=<nom-modele>
-AI_HOST=<adresse-ecoute>
-AI_PORT=<port-api>
-QDRANT_HOST=<hote-qdrant>
-QDRANT_PORT=<port-http-qdrant>
-DATA_DIR=<repertoire-donnees>
-IMAGES_PER_LABEL=<nombre-images>
-REQUEST_TIMEOUT=<timeout-secondes>
-MAX_RETRIES=<nombre-retries>
-MAX_CONCURRENT_DOWNLOADS=<concurrence>
-DEVICE=<cpu-ou-device-torch>
-SAVE_IMAGES=<true-ou-false>
-IMAGE_BACKUP_DIR=<repertoire-backup>
-LOG_LEVEL=<niveau-log>
-QDRANT_VERSION=<version-qdrant>
-QDRANT_GRPC_PORT=<port-grpc-qdrant>
-QDRANT_LOG_LEVEL=<niveau-log-qdrant>
+AI_HOST=0.0.0.0
+AI_PORT=8000
+EMBEDDING_MODEL_NAME=facebook/dinov2-large
+QDRANT_HOST=localhost
+QDRANT_PORT=6333
+DATA_DIR=./data
+IMAGE_DIR=./image_backup
+DEVICE=cpu
+MAX_CONCURRENT_UPLOADS=10
+IMAGES_PER_LABEL=3
+LOG_LEVEL=INFO
+QDRANT_VERSION=v1.18.2
+QDRANT_GRPC_PORT=6334
+QDRANT_LOG_LEVEL=INFO
 ```
 
-## Lancement local
+## Installation et utilisation locale
 
-1. Préparer l'arborescence attendue par les imports du projet (`src/` est utilisé par plusieurs imports relatifs et par `main.py`).
-2. Créer et activer un environnement virtuel :
+Prérequis : le dataset doit avoir été téléchargé et décompressé (voir la section obligatoire ci-dessus).
 
-```bash
-python3.13 -m venv .venv
-source .venv/bin/activate
-```
-
-3. Installer les dépendances du projet avec le gestionnaire  `uv` :
+Depuis la racine du projet :
 
 ```bash
 uv sync
 ```
-4. Placer les fichiers JSON de régions dans `DATA_DIR`, démarrer Qdrant sur `QDRANT_HOST:QDRANT_PORT`, puis lancer l'application avec la commande réellement présente dans ` main.py` :
+
+Démarrer Qdrant sur `localhost:6333`, puis lancer l'API :
 
 ```bash
 uv run python main.py
 ```
 
-Cette commande appelle `uvicorn.run(app=servapp, host=settings.ai_host, port=settings.ai_port)`. L'indexation de démarrage est exécutée avant que le lifespan ne rende le contrôle à l'application.
+`main.py` lance Uvicorn avec `AI_HOST` et `AI_PORT`. L'indexation est exécutée au démarrage de FastAPI ; le premier lancement peut être long, car il télécharge le modèle d'embedding.
 
-## Lancement avec Docker Compose
+## Docker Compose
 
-Depuis le répertoire contenant `docker-compose.yaml`, `.env`, `dockerfile`, `qdrant.dockerfile`, les sources et les fichiers de packaging :
+`docker-compose.yaml` déclare :
 
-```bash
-docker compose up --build
+- `web`, construit avec `build: .`, exposé sur `${AI_PORT}` ;
+- `qdrant`, construit depuis `qdrant.dockerfile`, avec stockage persistant dans le volume `qdrant_storage`.
+
+Montages du service `web` : `./image_dir:/greener/image_dir`, `./image_dir:/greener/image_dir` et `./data:/greener/data`. Définir dans l'environnement du conteneur `web` :
+
+```dotenv
+DATA_DIR=/greener/data
+IMAGE_DIR=/greener/image_dir
+QDRANT_HOST=qdrant
 ```
 
-Les services définis sont :
+Lancement :
 
-- `web` : construit l'image depuis `dockerfile`, expose `${AI_PORT}` sur le même port, monte `./data` vers `/greener/data`, `./images` vers `/greener/images` et `./backup_images` vers `/greener/backup_images`. Il attend le healthcheck de `qdrant`.
-- `qdrant` : construit depuis `qdrant.dockerfile`, persiste ses données dans le volume `qdrant_storage`, expose le port HTTP `${QDRANT_PORT}` et le port gRPC `${QDRANT_GRPC_PORT}`. Son healthcheck appelle `/healthz` sur l'hôte et le port Qdrant configurés.
+```bash
+docker compose up --build -d
+```
 
-Les volumes nommés déclarés sont `qdrant_storage`, `images`, `backup_images` et `data`, mais les services utilisent les montages bind `./images`, `./backup_images` et `./data` pour l'application web.
-
-## API
+## API HTTP
 
 ### `POST /greener/upload/dechets`
 
-Endpoint multipart/form-data défini dans `main.py`.
+Requête `multipart/form-data` :
 
-| Élément | Type | Obligatoire | Description |
+| Champ | Type | Obligatoire | Description |
 |---|---|---:|---|
-| `file` | fichier (`UploadFile`) | Oui | Image à classifier. Elle doit être décodable par Pillow. |
-| `region` | champ formulaire (`str`) | Oui | Nom de la région, correspondant au nom d'une collection Qdrant. |
+| `file` | fichier | Oui | Image lisible par Pillow. |
+| `region` | chaîne | Non | Nom de la collection Qdrant ; défaut : `ile_de_france`. |
 
-Réponse nominale HTTP 200 :
+Exemple :
+
+```bash
+curl -X POST "http://localhost:8000/greener/upload/dechets?region=ile_de_france" \
+  -F "file=@./exemples/dechet.jpg"
+```
+
+Réponse HTTP 200 :
 
 ```json
 {
-  "material_name": "<nom du matériau>",
-  "bin_color": "<couleur de poubelle>",
-  "score": 0.0
+  "material_name": "bouteille en plastique",
+  "bin_color": "jaune",
+  "score": 0.87
 }
 ```
 
-Le `score` est le score du meilleur point renvoyé par la recherche Qdrant. Les métadonnées sont lues dans les champs `nom` et `poubelle` du payload indexé.
+Codes d'erreur :
 
-Réponses d'erreur définies par le code :
+| HTTP | Situation |
+|---:|---|
+| `400` | Le fichier envoyé n'est pas une image valide. |
+| `404` | La région demandée n'existe pas (`UnknownRegionError`). |
+| `422` | Aucune correspondance trouvée (`NoMatchError`). |
 
-| HTTP | Condition | Corps JSON |
-|---:|---|---|
-| `400` | Le fichier ne peut pas être reconnu comme image (`UnidentifiedImageError`) | `{"detail":"Uploaded file is not a valid image."}` |
-| `404` | La collection de la région n'existe pas | `{"detail":"Unknown region: <region>"}` |
-| `422` | La recherche ne renvoie aucun résultat | `{"detail":"No match found in region: <region>"}` |
+La documentation interactive est disponible sur `/docs` lorsque le serveur est actif.
 
-Le code ne définit pas d'autre endpoint HTTP dans `main.py`.
+## Architecture et flux
 
-## Flux d'exécution
-
-### Indexation au démarrage
-
-```mermaid
-sequenceDiagram
-    participant App as FastAPI / Viewer
-    participant Regions as regions.py
-    participant Indexer as RegionIndexer
-    participant Fetcher as ImageFetcher
-    participant Search as DDGS
-    participant Embedder as ImageEmbedder
-    participant Repo as VectorRepository
-    participant Qdrant as Qdrant
-
-    App->>Regions: discover_region_files(DATA_DIR)
-    Regions-->>App: fichiers JSON tries
-    loop pour chaque fichier de region
-        App->>Regions: load_region_payloads(json_path)
-        Regions-->>App: QdrantPayload valides
-        App->>Indexer: index_region(collection, payloads)
-        Indexer->>Repo: ensure_collection(collection, dimension)
-        Repo->>Qdrant: collection_exists / create_collection
-        loop pour chaque payload
-            Indexer->>Repo: point_exists(collection, base_id)
-            Repo->>Qdrant: retrieve(point_id)
-            alt point absent
-                Indexer->>Fetcher: fetch(label, IMAGES_PER_LABEL)
-                Fetcher->>Search: recherche d'images
-                Search-->>Fetcher: URLs
-                Fetcher->>Fetcher: téléchargements httpx avec retries
-                loop pour chaque image téléchargée
-                    Indexer->>Embedder: embed(image)
-                    Embedder-->>Indexer: vecteur normalisé
-                    Indexer->>Repo: upsert(QdrantPoint)
-                    Repo->>Qdrant: upsert(PointStruct)
-                end
-            else point présent
-                Indexer-->>Indexer: ignorer le payload
-            end
-        end
-    end
-    App-->>App: rendre le serveur disponible
+```text
+main.py
+└── Viewer (FastAPI)
+    ├── Controller
+    │   └── Model
+    │       ├── ImageEmbedder (DINOv2 + PyTorch/Transformers)
+    │       └── AsyncQdrantClient
+    └── lifespan
+        └── run_startup_indexing
+            ├── regions.py        -> JSON de DATA_DIR
+            ├── ImageFetcher      -> images de IMAGE_DIR
+            ├── RegionIndexer
+            ├── ImageEmbedder
+            └── VectorRepository  -> collections Qdrant
 ```
 
-### Requête de recherche
+| Module | Rôle |
+|---|---|
+| `schemas.py` | Modèles `WasteItem`, `QdrantPayload`, `QdrantPoint`. |
+| `regions.py` | Découverte et validation des JSON de régions. |
+| `fetcher.py` | Lecture des images locales par libellé (aucun téléchargement distant). |
+| `embedder.py` | Production de vecteurs DINOv2 normalisés. |
+| `indexer.py` | Création d'une collection par région, identifiants déterministes. |
+| `repository.py` | Création de collection, vérification et upsert dans Qdrant. |
+| `model.py` | Encodage de l'image reçue et recherche du meilleur point. |
+| `controller.py` | Lien entre la vue et le modèle. |
+| `viewer.py` | Construction de l'application et indexation au démarrage. |
+| `logging_config.py` | Configuration des journaux sur la sortie standard. |
 
-```mermaid
-sequenceDiagram
-    participant Client
-    participant API as main.py / FastAPI
-    participant Viewer
-    participant Controller as Controller
-    participant Model
-    participant Embedder as ImageEmbedder
-    participant Qdrant
+## Dépannage
 
-    Client->>API: POST multipart (file, region)
-    API->>API: lire et décoder l'image avec Pillow
-    API->>Viewer: get_response(image, region)
-    Viewer->>Controller: get_model_response(image, region)
-    Controller->>Model: predict_material(image, region)
-    Model->>Qdrant: collection_exists(region)
-    alt région inconnue
-        Qdrant-->>Model: false
-        Model-->>API: UnknownRegionError
-        API-->>Client: 404 detail
-    else collection existante
-        Model->>Embedder: embed(image)
-        Embedder-->>Model: vecteur
-        Model->>Qdrant: query_points(region, limit=1, payload=true)
-        alt aucun résultat
-            Qdrant-->>Model: aucun point
-            Model-->>API: NoMatchError
-            API-->>Client: 422 detail
-        else meilleur point trouvé
-            Qdrant-->>Model: point et score
-            Model-->>API: Response(material_name, bin_color, score)
-            API-->>Client: 200 JSON
-        end
-    end
-```
+**Le démarrage échoue sur `DATA_DIR`** : créer le répertoire et y placer directement les JSON de régions (`ls ./data/*.json`). En conteneur, vérifier `/greener/data` et le volume monté.
 
-### Démarrage et arrêt
+**Aucun vecteur n'est indexé** : vérifier que le dataset a bien été décompressé, que `IMAGE_DIR` contient un sous-répertoire par libellé, que les extensions sont supportées et que les noms de répertoires correspondent aux valeurs `nom` des JSON après normalisation.
 
-```mermaid
-sequenceDiagram
-    participant Uvicorn
-    participant App as Viewer lifespan
-    participant Config as configs.py
-    participant Logs as logging_config.py
-    participant Index as run_startup_indexing
-    participant Qdrant
+**Qdrant n'est pas joignable** : vérifier `QDRANT_HOST` et `QDRANT_PORT`. Sous Compose, l'hôte doit être `qdrant`, pas `localhost`.
 
-    Uvicorn->>App: startup
-    App->>Config: get_settings()
-    Config-->>App: Settings mis en cache
-    App->>Logs: configure_logging(LOG_LEVEL)
-    App->>Index: lancer l'indexation
-    Index->>Qdrant: connexion AsyncQdrantClient
-    Index-->>App: indexation terminée ou erreur journalisée
-    App-->>Uvicorn: yield, serveur actif
-    Uvicorn->>App: shutdown
-    App-->>Uvicorn: journaliser Server shutdown
-```
+**Le modèle ne se charge pas** : vérifier l'accès réseau, l'espace disque et la valeur de `DEVICE`. Sans GPU, utiliser `DEVICE=cpu`.
 
-## Fonctionnement détaillé
+## Dépendances
 
-Le processus lit une seule fois la configuration via `get_settings`, dont le résultat est mémorisé par `lru_cache`. Le lifespan de `Viewer` configure le logger racine selon `LOG_LEVEL`, crée un client Qdrant asynchrone et initialise le modèle DINOv2, le dépôt, le récupérateur d'images et l'indexeur. Les JSON présents directement dans `DATA_DIR` sont triés; leur nom sans extension sert à la fois de région et de nom de collection. Les entrées valides sont converties en `QdrantPayload` et les entrées mal formées sont journalisées puis ignorées.
+Dépendances d'exécution (`pyproject.toml`) : FastAPI, Keras, Pydantic, pydantic-settings, python-dotenv, python-multipart, qdrant-client, TensorFlow, PyTorch, TorchVision, Transformers, Uvicorn.
 
-Pour chaque région, `VectorRepository` crée une collection si nécessaire, avec la dimension exposée par le modèle et la distance cosinus. `RegionIndexer` traite les payloads en concurrence avec `asyncio.gather`. Il réserve des identifiants déterministes à partir de l'index du payload et de `IMAGES_PER_LABEL`, saute un payload si son identifiant de base existe déjà, puis demande à `ImageFetcher` des images via DDGS. Les téléchargements sont asynchrones, limités par sémaphore et rejoués jusqu'à `MAX_RETRIES`; une copie JPEG peut être sauvegardée dans `IMAGE_BACKUP_DIR`. Chaque image est encodée dans un thread pour ne pas bloquer la boucle événementielle, puis insérée dans Qdrant avec ses métadonnées `nom`, `region` et `poubelle`.
-
-Lors d'une requête, l'image multipart est lue et validée par Pillow. Le modèle vérifie d'abord que la collection nommée par `region` existe, calcule le même type d'embedding DINOv2, puis appelle `query_points` avec `limit=1` et `with_payload=True`. Le payload du point le plus proche fournit le nom du matériau et la couleur de poubelle; le score Qdrant complète la réponse. Qdrant constitue donc le stockage persistant des vecteurs et des métadonnées, tandis que le volume `qdrant_storage` assure la persistance dans Compose. Les logs sont envoyés vers la sortie standard avec horodatage, niveau et nom du logger; les erreurs d'indexation sont capturées au démarrage et journalisées.
-
-## Dépannage et notes d'exploitation
-
-- **Aucun fichier de région trouvé :** vérifier que `DATA_DIR` existe et contient des fichiers `*.json`. Un répertoire absent provoque une erreur de démarrage d'indexation journalisée; un répertoire vide ne crée aucune collection.
-- **JSON ignoré :** la racine doit être une liste et chaque entrée doit contenir `nom` et `poubelle` non vides. Les entrées invalides sont ignorées individuellement.
-- **Qdrant inaccessible :** vérifier `QDRANT_HOST`, `QDRANT_PORT` et, avec Compose, le nom de service `qdrant`. En Compose, `web` reçoit `QDRANT_HOST=qdrant` dans son environnement.
-- **Healthcheck Qdrant :** le healthcheck utilise `curl` et `/healthz`; le port et l'hôte doivent correspondre aux variables passées au conteneur.
-- **Indexation lente ou incomplète :** la recherche d'images introduit un délai de 5 secondes dans `_search_urls`; les téléchargements peuvent échouer malgré les retries. Examiner les logs et ajuster `REQUEST_TIMEOUT`, `MAX_RETRIES` et `MAX_CONCURRENT_DOWNLOADS`.
-- **Mémoire et démarrage :** le modèle est chargé au démarrage et l'indexation est exécutée avant le service; un modèle ou un device inadapté peut empêcher le démarrage normal.
-- **Réexécution :** la présence du point d'identifiant de base permet d'éviter de réindexer un payload déjà commencé, mais le code ne fournit pas de commande dédiée de purge ou de reconstruction des collections.
-- **Imports et packaging :** certains fichiers utilisent des imports relatifs (`.embedder`, `.model`) et d'autres des imports `src.*`. L'arborescence d'exécution doit donc correspondre au package attendu; l'organisation plate des fichiers inspectés ne suffit pas nécessairement à exécuter le projet telle quelle.
-- **Build Docker :** `dockerfile` copie `pyproject.toml`, `uv.lock` et `src/`, alors que ces éléments ne figurent pas parmi les fichiers fournis. Le build échouera si ces éléments ne sont pas présents dans le contexte Docker.
-- **Variables Compose non consommées par `Settings` :** Compose définit `WEB_HOST` et `WEB_PORT` pour `web`, tandis que l'application lit `AI_HOST` et `AI_PORT`. Le fichier `.env` fourni définit les variables `AI_*`, qui sont donc celles utilisées par `configs.py`.
-- **Sécurité :** conserver les valeurs sensibles éventuelles uniquement dans l'environnement ou un gestionnaire de secrets; ne pas les committer ni les recopier dans la documentation.
+Groupe `dev` : Pillow, pip-audit, pytest, pytest-asyncio, pytest-cov, requests, Ruff.

@@ -78,7 +78,7 @@ class Settings(BaseSettings):
     )
 
     image_dir: Path = Field(
-        default=Path("./image_backup"),
+        default=Path("./image_dir"),
         alias="IMAGE_DIR",
         description="Directory for image backups.",
     )
