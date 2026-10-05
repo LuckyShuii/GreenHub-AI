@@ -82,8 +82,7 @@ jobs:
     name: Déclencher le déploiement VPS
     runs-on: ubuntu-latest
     needs: docker
-    if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
-    permissions: {}
+    if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'staging'
     steps:
       - name: Déclencher le déploiement
         env:
