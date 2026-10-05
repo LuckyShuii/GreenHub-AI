@@ -8,6 +8,7 @@ ENV UV_PYTHON_CACHE_DIR=/root/.cache/uv/python
 COPY pyproject.toml uv.lock ./
 COPY ./src ./src
 COPY ./data ./data
+COPY ./image_dir ./image_dir
 COPY main.py configs.py logging_config.py download_gdrive.py  ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
@@ -17,8 +18,4 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked
 
 ENV PATH="/greener/.venv/bin:$PATH"
-RUN  download_gdrive.py "https://drive.google.com/file/d/1VuH2IHp0lqivDrCTyw7hUcUPawtd0JDd/view?usp=drive_link" ./image_dir.tar \
-      --sha256 "$DATASET_SHA256"
-RUN tar -xzf ./image_dir.tar -C ./ --no-same-owner --no-same-permissions
-RUN rm ./image_dir.tar
 ENTRYPOINT ["python", "main.py"]
