@@ -5,10 +5,6 @@ on:
     branches-ignore:
       - main
       - staging
-  pull_request:
-    branches:
-      - main
-      - staging
   workflow_dispatch:
 
 concurrency:
