@@ -9,7 +9,7 @@ COPY pyproject.toml uv.lock ./
 COPY ./src ./src
 COPY ./data ./data
 COPY ./image_dir ./image_dir
-COPY main.py configs.py logging_config.py download_gdrive.py  ./
+COPY main.py configs.py logging_config.py ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
