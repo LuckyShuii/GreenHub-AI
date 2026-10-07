@@ -15,8 +15,8 @@ services:
     ports:
       - "${AI_PORT}:${AI_PORT}"
     volumes:
-      - ./images:/greener/images
-      - ./backup_images:/greener/backup_images
+      - ./image_dir:/greener/image_dir
+      - ./src:/greener/src
       - ./data:/greener/data
     depends_on:
       qdrant:
