@@ -6,6 +6,11 @@ from pathlib import Path
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+REQUIRED_MODEL_FILES: tuple[str, ...] = (
+    "config.json",
+    "preprocessor_config.json",
+)
+
 
 class Settings(BaseSettings):
     """Strongly-typed application settings sourced from the environment.
@@ -99,6 +104,50 @@ class Settings(BaseSettings):
         alias="IMAGES_PER_LABEL",
         description="number of images per label",
     )
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
+
+    embedding_model_name: str = Field(
+        default="facebook/dinov2-large",
+        alias="EMBEDDING_MODEL_NAME",
+        description="Hugging Face embedding model name.",
+    )
+    embedding_model_dir: Path = Field(
+        default=Path("./models"),
+        alias="EMBEDDING_MODEL_DIR",
+        description="Root directory where embedding models are stored.",
+    )
+
+    @property
+    def embedding_model_path(self) -> Path:
+        """Return the local directory of the configured embedding model.
+
+        Returns:
+            The model directory, derived from the model name so that
+            several models can coexist under the same root.
+
+        """
+        return self.embedding_model_dir / self.embedding_model_name.replace("/", "--")
+
+
+def is_model_available(model_path: Path) -> bool:
+    """Check whether a local model directory contains a loadable model.
+
+    Args:
+        model_path: Directory expected to contain the model files.
+
+    Returns:
+        True if the configuration and weight files are present.
+
+    """
+    has_configs = all((model_path / name).is_file() for name in REQUIRED_MODEL_FILES)
+    has_weights = any(model_path.glob("*.safetensors"))
+    return has_configs and has_weights
+
 
 
 @lru_cache
@@ -113,4 +162,3 @@ def get_settings() -> Settings:
 
     """
     return Settings()  # type: ignore
-

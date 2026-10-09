@@ -18,6 +18,7 @@ services:
       - ./image_dir:/greener/image_dir
       - ./src:/greener/src
       - ./data:/greener/data
+      - embedding_models:/greener/models:ro
     depends_on:
       qdrant:
         condition: service_healthy
