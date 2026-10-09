@@ -4,32 +4,58 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from typing import TYPE_CHECKING
 
 import numpy as np
 import torch
-from PIL import Image
 from transformers import AutoImageProcessor, AutoModel
+
+from configs import is_model_available
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from PIL import Image
 
 logger = logging.getLogger(__name__)
 
 
 class ImageEmbedder:
-    """Encode images into dense vectors using a DINOv2 model.
+    """Encode images into dense vectors using a locally stored DINOv2 model.
 
     Attributes:
         dimension: Dimensionality of the produced embedding vectors.
+
     """
 
-    def __init__(self, model_name: str, device: str) -> None:
-        """Initialize the embedder with a pretrained model.
+    def __init__(self, model_path: Path, device: str) -> None:
+        """Initialize the embedder from a local model directory.
 
         Args:
-            model_name: Hugging Face identifier of the model.
+            model_path: Local directory containing the model files.
             device: Torch device used for inference.
+
+        Raises:
+            FileNotFoundError: If the model is missing from model_path.
+
         """
+        if not is_model_available(model_path):
+            message = (
+                f"Embedding model not found in '{model_path}'. "
+                "Run 'python download_model.py' first."
+            )
+            raise FileNotFoundError(message)
+
+        logger.info("Loading embedding model from '%s'.", model_path)
         self._device = device
-        self._processor = AutoImageProcessor.from_pretrained(model_name)
-        self._model = AutoModel.from_pretrained(model_name).to(device)
+        self._processor = AutoImageProcessor.from_pretrained(
+            model_path,
+            local_files_only=True,
+        )
+        self._model = AutoModel.from_pretrained(
+            model_path,
+            local_files_only=True,
+        ).to(device)
         self._model.eval()
         self.dimension: int = self._model.config.hidden_size
 
@@ -41,6 +67,7 @@ class ImageEmbedder:
 
         Returns:
             The embedding vector as a list of floats.
+
         """
         inputs = self._processor(images=image, return_tensors="pt").to(self._device)
         with torch.no_grad():
@@ -57,5 +84,6 @@ class ImageEmbedder:
 
         Returns:
             The embedding vector as a list of floats.
+
         """
         return await asyncio.to_thread(self._embed_sync, image)

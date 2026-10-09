@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -12,11 +13,13 @@ from torch import ones, zeros
 
 from src.embedder import ImageEmbedder
 
-MODEL_NAME: str = "facebook/dinov2-small"
+MODEL_NAME = "facebook/dinov2-large"
+EMBEDDING_MODEL_DIR = Path("models")
+MODEL_PATH = EMBEDDING_MODEL_DIR / "facebook--dinov2-large"
 HIDDEN_SIZE: int = 384
 
 
-def _build_model_stub(hidden_size: int = HIDDEN_SIZE) -> MagicMock:
+def _build_model_stub(hidden_size: int = HIDDEN_SIZE, model_name: str = str(MODEL_PATH)) -> MagicMock:
     """Create a torch-free stand-in for a Hugging Face model.
 
     Args:
@@ -28,6 +31,7 @@ def _build_model_stub(hidden_size: int = HIDDEN_SIZE) -> MagicMock:
     model = MagicMock()
     model.config.hidden_size = hidden_size
     model.to.return_value = model
+    model.config.name = model_name
     outputs = MagicMock()
     outputs.last_hidden_state = ones((1, 5, hidden_size))
     model.return_value = outputs
@@ -68,7 +72,8 @@ def patched_embedder() -> Any:
             return_value=processor,
         ) as processor_loader,
     ):
-        embedder = ImageEmbedder(MODEL_NAME, "cpu")
+        embedder = ImageEmbedder(MODEL_PATH, "cpu")
+        print(embedder._model.name)
         yield embedder, model, processor, model_loader, processor_loader
 
 
@@ -82,8 +87,8 @@ class TestImageEmbedderInitialization:
             patched_embedder: Fixture bundling the embedder and stubs.
         """
         _, _, _, model_loader, processor_loader = patched_embedder
-        model_loader.assert_called_once_with(MODEL_NAME)
-        processor_loader.assert_called_once_with(MODEL_NAME)
+        model_loader.assert_called_once_with(MODEL_PATH, local_files_only=True)
+        processor_loader.assert_called_once_with(MODEL_PATH, local_files_only=True)
 
     def test_exposes_model_hidden_size(self, patched_embedder: Any) -> None:
         """The dimension attribute mirrors the model hidden size.

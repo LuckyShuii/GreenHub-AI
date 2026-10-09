@@ -68,8 +68,8 @@ class Model:
     def __init__(self) -> None:
         """Initialize the embedder and the async Qdrant client."""
         settings = get_settings()
-        self._embedder = ImageEmbedder(settings.embedding_model_name,
-                                       settings.device)
+        self._embedder = ImageEmbedder(settings.embedding_model_path, settings.device)
+
         self._client = AsyncQdrantClient(
             host=settings.qdrant_host,
             port=settings.qdrant_port,
