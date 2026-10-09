@@ -54,7 +54,7 @@ class Settings(BaseSettings):
         description="Server listening port.",
     )
     embedding_model_name: str = Field(
-        default="facebook/dinov2-small",
+        default="facebook/dinov2-large",
         alias="EMBEDDING_MODEL_NAME",
         description="Hugging Face embedding model name.",
     )
@@ -144,7 +144,8 @@ def is_model_available(model_path: Path) -> bool:
         True if the configuration and weight files are present.
 
     """
-    has_configs = all((model_path / name).is_file() for name in REQUIRED_MODEL_FILES)
+    model_path = Path(model_path)
+    has_configs = all(((model_path / name).is_file() ) for name in REQUIRED_MODEL_FILES)
     has_weights = any(model_path.glob("*.safetensors"))
     return has_configs and has_weights
 

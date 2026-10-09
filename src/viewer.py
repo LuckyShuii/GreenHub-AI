@@ -27,7 +27,7 @@ async def run_startup_indexing() -> None:
     client = AsyncQdrantClient(
         host=settings.qdrant_host, port=settings.qdrant_port
     )
-    embedder = ImageEmbedder(settings.embedding_model_name, settings.device)
+    embedder = ImageEmbedder(settings.embedding_model_path, settings.device)
     repository = VectorRepository(client)
     semaphore = asyncio.Semaphore(settings.max_concurrent_uploads)
     fetcher = ImageFetcher(
