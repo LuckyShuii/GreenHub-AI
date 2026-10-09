@@ -10,6 +10,7 @@ COPY main.py configs.py logging_config.py ./
 
 COPY ./src ./src
 COPY ./data ./data
+COPY ./models ./models
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
