@@ -7,6 +7,10 @@ ENV UV_PYTHON_CACHE_DIR=/root/.cache/uv/python
 
 COPY pyproject.toml uv.lock ./
 COPY main.py configs.py logging_config.py ./
+
+COPY ./src ./src
+COPY ./data ./data
+
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
