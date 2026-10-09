@@ -15,6 +15,7 @@ jobs:
   quality:
     name: Qualité
     runs-on: ubuntu-latest
+    
 
     steps:
       - name: Récupérer le code

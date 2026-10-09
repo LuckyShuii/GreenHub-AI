@@ -1,3 +1,24 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:12df51c069a2dc1305e34ba71ef58bc2407ea553b75f4722a1715c1bce3bbed0
-size 549
+{
+  "architectures": [
+    "Dinov2Model"
+  ],
+  "attention_probs_dropout_prob": 0.0,
+  "drop_path_rate": 0.0,
+  "hidden_act": "gelu",
+  "hidden_dropout_prob": 0.0,
+  "hidden_size": 1024,
+  "image_size": 518,
+  "initializer_range": 0.02,
+  "layer_norm_eps": 1e-06,
+  "layerscale_value": 1.0,
+  "mlp_ratio": 4,
+  "model_type": "dinov2",
+  "num_attention_heads": 16,
+  "num_channels": 3,
+  "num_hidden_layers": 24,
+  "patch_size": 14,
+  "qkv_bias": true,
+  "torch_dtype": "float32",
+  "transformers_version": "4.31.0.dev0",
+  "use_swiglu_ffn": false
+}
