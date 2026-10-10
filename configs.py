@@ -95,12 +95,12 @@ class Settings(BaseSettings):
     )
 
     max_concurrent_uploads: int = Field(
-        default=10,
+        default=2,
         alias="MAX_CONCURRENT_UPLOADS",
         description=" Max concurrent image upoads.",
     )
     images_per_label: int = Field(
-        default=3,
+        default=1,
         alias="IMAGES_PER_LABEL",
         description="number of images per label",
     )
