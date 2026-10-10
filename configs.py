@@ -100,7 +100,7 @@ class Settings(BaseSettings):
         description=" Max concurrent image upoads.",
     )
     images_per_label: int = Field(
-        default=1,
+        default=3,
         alias="IMAGES_PER_LABEL",
         description="number of images per label",
     )
