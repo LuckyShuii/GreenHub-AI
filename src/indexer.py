@@ -56,10 +56,16 @@ class RegionIndexer:
         """
         base_id = index * self._images_per_label
         if await self._repository.point_exists(collection_name, base_id):
+            point_ids = [
+                base_id + offset for offset in range(self._images_per_label)
+            ]
+            await self._repository.update_payload(
+                collection_name, point_ids,
+                QdrantPoint(point_id=base_id, vector=[], payload=payload),
+            )
             logger.info(
-                "Item '%s' already indexed in '%s'. Skipping.",
-                payload.nom,
-                collection_name,
+                "Refreshed metadata for '%s' in '%s' without re-embedding.",
+                payload.nom, collection_name,
             )
             return 0
 

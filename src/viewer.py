@@ -49,8 +49,8 @@ async def run_startup_indexing() -> None:
         try:
             payloads = load_region_payloads(json_path)
         except ValueError as error:
-                logger.error("Skipping region '%s': %s", collection_name, error)
-                continue
+            logger.error("Skipping region '%s': %s", collection_name, error)
+            continue
         await indexer.index_region(collection_name, payloads)
 
     await client.close()
