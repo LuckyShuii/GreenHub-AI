@@ -17,8 +17,8 @@ from tqdm import tqdm
 
 DEFAULT_URL: str = "https://greenhub.lucasboillot.fr/ai/greener/upload/dechets"
 TARGET_URL: str = os.environ.get("GREENER_API_URL", DEFAULT_URL)
-UPLOAD_COUNT: int = 3
-REQUESTS_PER_UPLOAD: int = 100
+UPLOAD_COUNT: int = 10
+REQUESTS_PER_UPLOAD: int = 10
 MIN_REQUESTS_PER_SECOND: float = 0.5
 CONCURRENCY: int = 8
 TARGET_REGION: str = "ile_de_france"
