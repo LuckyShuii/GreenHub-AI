@@ -1,27 +1,27 @@
 """Waste classification model using Qdrant vector similarity search."""
 
-import asyncio
-from concurrent.futures import ThreadPoolExecutor
-from typing import ClassVar
+from __future__ import annotations
 
-import pydantic
+from typing import Any
+
 from PIL import Image
+from pydantic import BaseModel, ValidationError
 from qdrant_client import AsyncQdrantClient
 
 from configs import get_settings
-from src.embedder import ImageEmbedder
+from logging_config import get_logger
+
+from .embedder import ImageEmbedder
+from .schemas import AcceptedMaterial, MaterialMetadata
+
+logger = get_logger(__name__)
 
 
 class UnknownRegionError(Exception):
     """Raised when the requested region has no Qdrant collection."""
 
     def __init__(self, region: str) -> None:
-        """Initialize the error with the offending region name.
-
-        Args:
-            region: The region name that has no matching collection.
-
-        """
+        """Store the unknown region name."""
         self.region = region
         super().__init__(f"Unknown region: {region}")
 
@@ -30,116 +30,60 @@ class NoMatchError(Exception):
     """Raised when no similar reference vector is found in Qdrant."""
 
     def __init__(self, region: str) -> None:
-        """Initialize the error with the searched region.
-
-        Args:
-            region: The region collection that returned no match.
-
-        """
+        """Store the region in which no match was found."""
         self.region = region
         super().__init__(f"No match found in region: {region}")
 
 
-class Response(pydantic.BaseModel):
-    """Structured prediction response returned by the model.
-
-    Attributes:
-        material_name: The name of the detected waste item.
-        bin_color: The region-specific bin instruction.
-        score: The similarity score of the closest match.
-
-    """
+class Response(BaseModel):
+    """Public prediction response without the internal similarity score."""
 
     material_name: str
     bin_color: str
-    score: float
+    accepted_materials: list[AcceptedMaterial] | None = None
+
+
+def parse_accepted_materials(
+    payload: dict[str, Any],
+) -> list[AcceptedMaterial] | None:
+    """Validate stored materials, returning None when absent or invalid."""
+    try:
+        metadata = MaterialMetadata.model_validate(
+            {"accepted_materials": payload.get("accepted_materials")}
+        )
+    except ValidationError as error:
+        logger.warning("Invalid accepted_materials in payload: %s", error)
+        return None
+    return metadata.accepted_materials
 
 
 class Model:
-    """Asynchronous waste classifier backed by Qdrant similarity search.
-
-    The image is embedded, then the region-specific collection is queried
-    for the nearest reference vector. The associated payload carries the
-    waste name and the region-specific bin color.
-    """
-
-    _executor: ClassVar[ThreadPoolExecutor] = ThreadPoolExecutor()
+    """Asynchronous waste classifier backed by Qdrant similarity search."""
 
     def __init__(self) -> None:
-        """Initialize the embedder and the async Qdrant client."""
+        """Create the embedder and the Qdrant client from settings."""
         settings = get_settings()
         self._embedder = ImageEmbedder(settings.embedding_model_path, settings.device)
-
         self._client = AsyncQdrantClient(
-            host=settings.qdrant_host,
-            port=settings.qdrant_port,
+            host=settings.qdrant_host, port=settings.qdrant_port
         )
 
-    async def _embed_image(self, image: Image.Image) -> list[float]:
-        """Embed an image synchronously in a worker thread.
-
-        Args:
-            image: The PIL image to embed.
-
-        Returns:
-            The embedding vector as a list of floats.
-
-        """
-        return await self._embedder.embed(image)
-
-    async def _collection_exists(self, region: str) -> bool:
-        """Check whether the region collection exists in Qdrant.
-
-        Args:
-            region: The region name used as the collection name.
-
-        Returns:
-            True if the collection exists, False otherwise.
-
-        """
-        return await self._client.collection_exists(region)
-
-    async def predict_material(
-        self, image: Image.Image, region: str
-    ) -> Response:
-        """Classify an image against a region-specific collection.
-
-        Args:
-            image: The PIL image to classify.
-            region: The region whose collection is queried.
-
-        Returns:
-            A Response with the waste name, bin color, and score.
-
-        Raises:
-            UnknownRegionError: If the region collection does not exist.
-            NoMatchError: If the search returns no result.
-
-        """
-        if not await self._collection_exists(region):
+    async def predict_material(self, image: Image.Image, region: str) -> Response:
+        """Classify an image and return the stored waste metadata."""
+        if not await self._client.collection_exists(region):
             raise UnknownRegionError(region)
-
-        loop = asyncio.get_running_loop()
-        vector = await loop.run_in_executor(
-            self._executor,
-            self._embed_image,
-            image,
-        )
-
+        vector = await self._embedder.embed(image)
         results = await self._client.query_points(
             collection_name=region,
-            query=await vector,
+            query=vector,
             limit=1,
             with_payload=True,
         )
-
-        if not results:
+        if not results.points:
             raise NoMatchError(region)
-
-        best = results.points[0]
-        payload = best.payload or {}
+        payload: dict[str, Any] = results.points[0].payload or {}
         return Response(
             material_name=str(payload.get("nom", "unknown")),
             bin_color=str(payload.get("poubelle", "unknown")),
-            score=float(best.score),
+            accepted_materials=parse_accepted_materials(payload),
         )

@@ -72,6 +72,24 @@ class VectorRepository:
             )
             return False
 
+    async def update_payload(
+        self, collection_name: str, point_ids: list[int], payload: QdrantPoint
+    ) -> bool:
+        """Refresh metadata for existing points without re-embedding images."""
+        try:
+            await self._client.set_payload(
+                collection_name=collection_name,
+                payload=payload.payload.model_dump(),
+                points=point_ids,
+            )
+            return True
+        except Exception as error:  # noqa: BLE001
+            logger.warning(
+                "Payload refresh failed in '%s' for IDs %s: %s",
+                collection_name, point_ids, error
+            )
+            return False
+
     async def upsert(self, collection_name: str, point: QdrantPoint) -> bool:
         """Insert a point into a region collection if absent.
 
