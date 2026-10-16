@@ -1,921 +1,1015 @@
 [
-    {
-        "nom": "Bouteille plastique",
-        "poubelle": "Jaune",
-        "collection_material_code": "PLST",
-        "collection_material_name": "Plastique",
-        "collection_materials": [
-            "plastique"
-        ]
-    },
-    {
-        "nom": "Flacon shampoing",
-        "poubelle": "Jaune",
-        "collection_material_code": "PLST",
-        "collection_material_name": "Plastique",
-        "collection_materials": [
-            "plastique"
-        ]
-    },
-    {
-        "nom": "Pot de yaourt",
-        "poubelle": "Jaune",
-        "collection_material_code": "PLST",
-        "collection_material_name": "Plastique",
-        "collection_materials": [
-            "plastique"
-        ]
-    },
-    {
-        "nom": "Sac plastique",
-        "poubelle": "Noir",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Film plastique",
-        "poubelle": "Noir",
-        "collection_material_code": "PLST",
-        "collection_material_name": "Plastique",
-        "collection_materials": [
-            "plastique"
-        ]
-    },
-    {
-        "nom": "Barquette styromousse",
-        "poubelle": "Noir",
-        "collection_material_code": "PLST",
-        "collection_material_name": "Plastique",
-        "collection_materials": [
-            "plastique"
-        ]
-    },
-    {
-        "nom": "Emballage alimentaire (PP)",
-        "poubelle": "Jaune",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Bouteille huile plastique",
-        "poubelle": "Jaune",
-        "collection_material_code": "PLST",
-        "collection_material_name": "Plastique",
-        "collection_materials": [
-            "plastique"
-        ]
-    },
-    {
-        "nom": "Tube dentifrice",
-        "poubelle": "Noir",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Bouchon plastique",
-        "poubelle": "Jaune",
-        "collection_material_code": "BCHP",
-        "collection_material_name": "Bouchons plastique",
-        "collection_materials": [
-            "bouchons-plastique",
-            "plastique"
-        ]
-    },
-    {
-        "nom": "Barquette plastique alimentaire",
-        "poubelle": "Jaune",
-        "collection_material_code": "PLST",
-        "collection_material_name": "Plastique",
-        "collection_materials": [
-            "plastique"
-        ]
-    },
-    {
-        "nom": "Opercule plastique",
-        "poubelle": "Jaune",
-        "collection_material_code": "PLST",
-        "collection_material_name": "Plastique",
-        "collection_materials": [
-            "plastique"
-        ]
-    },
-    {
-        "nom": "Pot de fleur plastique",
-        "poubelle": "Jaune",
-        "collection_material_code": "PLST",
-        "collection_material_name": "Plastique",
-        "collection_materials": [
-            "plastique"
-        ]
-    },
-    {
-        "nom": "Flacon produit ménager",
-        "poubelle": "Jaune",
-        "collection_material_code": "PLST",
-        "collection_material_name": "Plastique",
-        "collection_materials": [
-            "plastique"
-        ]
-    },
-    {
-        "nom": "Bidon plastique",
-        "poubelle": "Jaune",
-        "collection_material_code": "PLST",
-        "collection_material_name": "Plastique",
-        "collection_materials": [
-            "plastique"
-        ]
-    },
-    {
-        "nom": "Film étirable alimentaire",
-        "poubelle": "Noir",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Paille plastique",
-        "poubelle": "Noir",
-        "collection_material_code": "PLST",
-        "collection_material_name": "Plastique",
-        "collection_materials": [
-            "plastique"
-        ]
-    },
-    {
-        "nom": "Couverts jetables",
-        "poubelle": "Noir",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Assiette jetable plastique",
-        "poubelle": "Noir",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Gobelet plastique",
-        "poubelle": "Noir",
-        "collection_material_code": "PLST",
-        "collection_material_name": "Plastique",
-        "collection_materials": [
-            "plastique"
-        ]
-    },
-    {
-        "nom": "Emballage chips (sachet)",
-        "poubelle": "Noir",
-        "collection_material_code": "PLST",
-        "collection_material_name": "Plastique",
-        "collection_materials": [
-            "plastique"
-        ]
-    },
-    {
-        "nom": "Pot de crème cosmétique",
-        "poubelle": "Jaune",
-        "collection_material_code": "PLST",
-        "collection_material_name": "Plastique",
-        "collection_materials": [
-            "plastique"
-        ]
-    },
-    {
-        "nom": "Brosse à dents",
-        "poubelle": "Noir",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Carte bancaire",
-        "poubelle": "Noir",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Papier bulle",
-        "poubelle": "Noir",
-        "collection_material_code": "PPR",
-        "collection_material_name": "Papier / Emballages",
-        "collection_materials": [
-            "papier-emballages"
-        ]
-    },
-    {
-        "nom": "Mousse polyuréthane",
-        "poubelle": "Déchetterie",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Boîte en carton",
-        "poubelle": "Jaune",
-        "collection_material_code": "PPR",
-        "collection_material_name": "Papier / Emballages",
-        "collection_materials": [
-            "papier-emballages"
-        ]
-    },
-    {
-        "nom": "Carton pizza",
-        "poubelle": "Noir",
-        "collection_material_code": "PPR",
-        "collection_material_name": "Papier / Emballages",
-        "collection_materials": [
-            "papier-emballages"
-        ]
-    },
-    {
-        "nom": "Emballage carton liquide",
-        "poubelle": "Jaune",
-        "collection_material_code": "PPR",
-        "collection_material_name": "Papier / Emballages",
-        "collection_materials": [
-            "papier-emballages"
-        ]
-    },
-    {
-        "nom": "Boîte de céréales",
-        "poubelle": "Jaune",
-        "collection_material_code": "PPR",
-        "collection_material_name": "Papier / Emballages",
-        "collection_materials": [
-            "papier-emballages"
-        ]
-    },
-    {
-        "nom": "Brique de lait",
-        "poubelle": "Jaune",
-        "collection_material_code": "PPR",
-        "collection_material_name": "Papier / Emballages",
-        "collection_materials": [
-            "papier-emballages"
-        ]
-    },
-    {
-        "nom": "Boîte carton pharmaceutique",
-        "poubelle": "Jaune",
-        "collection_material_code": "PPR",
-        "collection_material_name": "Papier / Emballages",
-        "collection_materials": [
-            "papier-emballages"
-        ]
-    },
-    {
-        "nom": "Rouleau carton (WC)",
-        "poubelle": "Jaune",
-        "collection_material_code": "PPR",
-        "collection_material_name": "Papier / Emballages",
-        "collection_materials": [
-            "papier-emballages"
-        ]
-    },
-    {
-        "nom": "Boîte d'archive",
-        "poubelle": "Jaune",
-        "collection_material_code": "PPR",
-        "collection_material_name": "Papier / Emballages",
-        "collection_materials": [
-            "papier-emballages"
-        ]
-    },
-    {
-        "nom": "Journal / magazine",
-        "poubelle": "Jaune",
-        "collection_material_code": "PPR",
-        "collection_material_name": "Papier / Emballages",
-        "collection_materials": [
-            "papier-emballages"
-        ]
-    },
-    {
-        "nom": "Papier essuie-tout usagé",
-        "poubelle": "Noir",
-        "collection_material_code": "PPR",
-        "collection_material_name": "Papier / Emballages",
-        "collection_materials": [
-            "papier-emballages"
-        ]
-    },
-    {
-        "nom": "Mouchoir usagé",
-        "poubelle": "Noir",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Enveloppe",
-        "poubelle": "Jaune",
-        "collection_material_code": "PPR",
-        "collection_material_name": "Papier / Emballages",
-        "collection_materials": [
-            "papier-emballages"
-        ]
-    },
-    {
-        "nom": "Ticket de caisse",
-        "poubelle": "Noir",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Papier cadeau pailleté",
-        "poubelle": "Noir",
-        "collection_material_code": "PPR",
-        "collection_material_name": "Papier / Emballages",
-        "collection_materials": [
-            "papier-emballages"
-        ]
-    },
-    {
-        "nom": "Photo imprimée",
-        "poubelle": "Noir",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Annuaire téléphonique",
-        "poubelle": "Jaune",
-        "collection_material_code": "PPR",
-        "collection_material_name": "Papier / Emballages",
-        "collection_materials": [
-            "papier-emballages"
-        ]
-    },
-    {
-        "nom": "Papier cadeau mat 100% papier",
-        "poubelle": "Jaune",
-        "collection_material_code": "PPR",
-        "collection_material_name": "Papier / Emballages",
-        "collection_materials": [
-            "papier-emballages"
-        ]
-    },
-    {
-        "nom": "Post-it",
-        "poubelle": "Noir",
-        "collection_material_code": "PPR",
-        "collection_material_name": "Papier / Emballages",
-        "collection_materials": [
-            "papier-emballages"
-        ]
-    },
-    {
-        "nom": "Bouteille en verre",
-        "poubelle": "Verre",
-        "collection_material_code": "VER",
-        "collection_material_name": "Verre",
-        "collection_materials": [
-            "verre"
-        ]
-    },
-    {
-        "nom": "Pot en verre",
-        "poubelle": "Verre",
-        "collection_material_code": "VER",
-        "collection_material_name": "Verre",
-        "collection_materials": [
-            "verre"
-        ]
-    },
-    {
-        "nom": "Verre cassé",
-        "poubelle": "Noir",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Bocal confiture",
-        "poubelle": "Verre",
-        "collection_material_code": "VER",
-        "collection_material_name": "Verre",
-        "collection_materials": [
-            "verre"
-        ]
-    },
-    {
-        "nom": "Miroir",
-        "poubelle": "Déchetterie",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Verre à boire cassé",
-        "poubelle": "Déchetterie",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Vitres / fenêtres",
-        "poubelle": "Déchetterie",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Céramique cassée",
-        "poubelle": "Déchetterie",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Pyrex (plat four)",
-        "poubelle": "Déchetterie",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Canette aluminium",
-        "poubelle": "Jaune",
-        "collection_material_code": "MET",
-        "collection_material_name": "Métaux",
-        "collection_materials": [
-            "metaux"
-        ]
-    },
-    {
-        "nom": "Boîte de conserve",
-        "poubelle": "Jaune",
-        "collection_material_code": "MET",
-        "collection_material_name": "Métaux",
-        "collection_materials": [
-            "metaux"
-        ]
-    },
-    {
-        "nom": "Couvercle métallique",
-        "poubelle": "Jaune",
-        "collection_material_code": "MET",
-        "collection_material_name": "Métaux",
-        "collection_materials": [
-            "metaux"
-        ]
-    },
-    {
-        "nom": "Papier aluminium",
-        "poubelle": "Noir",
-        "collection_material_code": "PPR",
-        "collection_material_name": "Papier / Emballages",
-        "collection_materials": [
-            "papier-emballages"
-        ]
-    },
-    {
-        "nom": "Capsule café",
-        "poubelle": "Collecte spéciale",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Aérosol vide",
-        "poubelle": "Jaune",
-        "collection_material_code": "MET",
-        "collection_material_name": "Métaux",
-        "collection_materials": [
-            "metaux"
-        ]
-    },
-    {
-        "nom": "Canette fer blanc",
-        "poubelle": "Jaune",
-        "collection_material_code": "MET",
-        "collection_material_name": "Métaux",
-        "collection_materials": [
-            "metaux"
-        ]
-    },
-    {
-        "nom": "Barquette aluminium",
-        "poubelle": "Jaune",
-        "collection_material_code": "MET",
-        "collection_material_name": "Métaux",
-        "collection_materials": [
-            "metaux"
-        ]
-    },
-    {
-        "nom": "Capsule Nespresso (alu)",
-        "poubelle": "Collecte spéciale",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Vis / boulons",
-        "poubelle": "Déchetterie",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Reste alimentaire",
-        "poubelle": "Compost",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Déchet végétal",
-        "poubelle": "Compost",
-        "collection_material_code": "GEEN",
-        "collection_material_name": "Déchets verts",
-        "collection_materials": [
-            "dechets-verts"
-        ]
-    },
-    {
-        "nom": "Marc de café",
-        "poubelle": "Compost",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Épluchures légumes",
-        "poubelle": "Compost",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Coquilles d'œuf",
-        "poubelle": "Compost",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Sachet de thé",
-        "poubelle": "Compost",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Feuilles mortes",
-        "poubelle": "Vert",
-        "collection_material_code": "GEEN",
-        "collection_material_name": "Déchets verts",
-        "collection_materials": [
-            "dechets-verts"
-        ]
-    },
-    {
-        "nom": "Branche de jardin",
-        "poubelle": "Vert",
-        "collection_material_code": "GEEN",
-        "collection_material_name": "Déchets verts",
-        "collection_materials": [
-            "dechets-verts"
-        ]
-    },
-    {
-        "nom": "Gazon tondu",
-        "poubelle": "Vert",
-        "collection_material_code": "GEEN",
-        "collection_material_name": "Déchets verts",
-        "collection_materials": [
-            "dechets-verts"
-        ]
-    },
-    {
-        "nom": "Marc de café + filtre",
-        "poubelle": "Compost",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Cendre de cheminée (froide)",
-        "poubelle": "Compost",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Pile AA/AAA",
-        "poubelle": "Collecte spéciale",
-        "collection_material_code": "PIL",
-        "collection_material_name": "Piles",
-        "collection_materials": [
-            "piles"
-        ]
-    },
-    {
-        "nom": "Ampoule classique",
-        "poubelle": "Collecte spéciale",
-        "collection_material_code": "AMPL",
-        "collection_material_name": "Ampoules",
-        "collection_materials": [
-            "ampoules"
-        ]
-    },
-    {
-        "nom": "Téléphone portable",
-        "poubelle": "Collecte spéciale",
-        "collection_material_code": "TLF",
-        "collection_material_name": "Téléphones",
-        "collection_materials": [
-            "telephones"
-        ]
-    },
-    {
-        "nom": "Cartouche d'encre",
-        "poubelle": "Collecte spéciale",
-        "collection_material_code": "CER",
-        "collection_material_name": "Cartouches",
-        "collection_materials": [
-            "cartouches"
-        ]
-    },
-    {
-        "nom": "Câble électrique",
-        "poubelle": "Collecte spéciale",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Ampoule LED",
-        "poubelle": "Collecte spéciale",
-        "collection_material_code": "AMPL",
-        "collection_material_name": "Ampoules",
-        "collection_materials": [
-            "ampoules"
-        ]
-    },
-    {
-        "nom": "Ampoule fluocompacte",
-        "poubelle": "Collecte spéciale",
-        "collection_material_code": "AMPL",
-        "collection_material_name": "Ampoules",
-        "collection_materials": [
-            "ampoules"
-        ]
-    },
-    {
-        "nom": "Batterie voiture",
-        "poubelle": "Déchetterie",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Chargeur téléphone",
-        "poubelle": "Collecte spéciale",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "PC portable",
-        "poubelle": "Collecte spéciale",
-        "collection_material_code": "INF",
-        "collection_material_name": "Matériel informatique",
-        "collection_materials": [
-            "materiel-informatique"
-        ]
-    },
-    {
-        "nom": "Tablette numérique",
-        "poubelle": "Collecte spéciale",
-        "collection_material_code": "INF",
-        "collection_material_name": "Matériel informatique",
-        "collection_materials": [
-            "materiel-informatique"
-        ]
-    },
-    {
-        "nom": "Écran TV / moniteur",
-        "poubelle": "Collecte spéciale",
-        "collection_material_code": "INF",
-        "collection_material_name": "Matériel informatique",
-        "collection_materials": [
-            "materiel-informatique"
-        ]
-    },
-    {
-        "nom": "Batterie lithium-ion",
-        "poubelle": "Collecte spéciale",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Pile bouton",
-        "poubelle": "Collecte spéciale",
-        "collection_material_code": "PIL",
-        "collection_material_name": "Piles",
-        "collection_materials": [
-            "piles"
-        ]
-    },
-    {
-        "nom": "Disque dur",
-        "poubelle": "Collecte spéciale",
-        "collection_material_code": "INF",
-        "collection_material_name": "Matériel informatique",
-        "collection_materials": [
-            "materiel-informatique"
-        ]
-    },
-    {
-        "nom": "Vêtement usagé",
-        "poubelle": "Collecte spéciale",
-        "collection_material_code": "VET",
-        "collection_material_name": "Tissus / Vêtements",
-        "collection_materials": [
-            "tissus-vetements"
-        ]
-    },
-    {
-        "nom": "Chaussures usagées",
-        "poubelle": "Collecte spéciale",
-        "collection_material_code": "CHS",
-        "collection_material_name": "Chaussures",
-        "collection_materials": [
-            "chaussures"
-        ]
-    },
-    {
-        "nom": "Moquette",
-        "poubelle": "Déchetterie",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Palette bois",
-        "poubelle": "Déchetterie",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Meuble en bois",
-        "poubelle": "Déchetterie",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Peinture",
-        "poubelle": "Déchetterie",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Huile de vidange",
-        "poubelle": "Déchetterie",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Huile de friture usagée",
-        "poubelle": "Collecte spéciale",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Solvant",
-        "poubelle": "Déchetterie",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Bombe insecticide",
-        "poubelle": "Déchetterie",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Pesticide",
-        "poubelle": "Déchetterie",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Thermomètre mercure",
-        "poubelle": "Collecte spéciale",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Médicament périmé",
-        "poubelle": "Collecte spéciale",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Seringue médicale",
-        "poubelle": "Collecte spéciale",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Déchet de bricolage",
-        "poubelle": "Déchetterie",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Couche usage unique",
-        "poubelle": "Noir",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Rasoir jetable",
-        "poubelle": "Noir",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Bouchon liège",
-        "poubelle": "Collecte spéciale",
-        "collection_material_code": "BCHL",
-        "collection_material_name": "Bouchons liège",
-        "collection_materials": [
-            "bouchons-liege"
-        ]
-    },
-    {
-        "nom": "Stylo à bille",
-        "poubelle": "Noir",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Matelas",
-        "poubelle": "Déchetterie",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Pneu de voiture",
-        "poubelle": "Déchetterie",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Gravats / béton",
-        "poubelle": "Déchetterie",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Laine de verre",
-        "poubelle": "Déchetterie",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Mégot de cigarette",
-        "poubelle": "Noir",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    },
-    {
-        "nom": "Litière chat",
-        "poubelle": "Noir",
-        "collection_material_code": null,
-        "collection_material_name": null,
-        "collection_materials": []
-    }
+  {
+    "nom": "Bouteille plastique",
+    "poubelle": "Jaune",
+    "accepted_materials": [
+      {
+        "slug": "plastique",
+        "column": "PLST",
+        "label": "Plastique"
+      }
+    ]
+  },
+  {
+    "nom": "Flacon shampoing",
+    "poubelle": "Jaune",
+    "accepted_materials": [
+      {
+        "slug": "plastique",
+        "column": "PLST",
+        "label": "Plastique"
+      }
+    ]
+  },
+  {
+    "nom": "Pot de yaourt",
+    "poubelle": "Jaune",
+    "accepted_materials": [
+      {
+        "slug": "plastique",
+        "column": "PLST",
+        "label": "Plastique"
+      }
+    ]
+  },
+  {
+    "nom": "Sac plastique",
+    "poubelle": "Noir",
+    "accepted_materials": [
+      {
+        "slug": "plastique",
+        "column": "PLST",
+        "label": "Plastique"
+      }
+    ]
+  },
+  {
+    "nom": "Film plastique",
+    "poubelle": "Noir",
+    "accepted_materials": [
+      {
+        "slug": "plastique",
+        "column": "PLST",
+        "label": "Plastique"
+      }
+    ]
+  },
+  {
+    "nom": "Barquette styromousse",
+    "poubelle": "Noir",
+    "accepted_materials": [
+      {
+        "slug": "plastique",
+        "column": "PLST",
+        "label": "Plastique"
+      }
+    ]
+  },
+  {
+    "nom": "Emballage alimentaire (PP)",
+    "poubelle": "Jaune",
+    "accepted_materials": [
+      {
+        "slug": "plastique",
+        "column": "PLST",
+        "label": "Plastique"
+      }
+    ]
+  },
+  {
+    "nom": "Bouteille huile plastique",
+    "poubelle": "Jaune",
+    "accepted_materials": [
+      {
+        "slug": "plastique",
+        "column": "PLST",
+        "label": "Plastique"
+      }
+    ]
+  },
+  {
+    "nom": "Tube dentifrice",
+    "poubelle": "Noir",
+    "accepted_materials": [
+      {
+        "slug": "plastique",
+        "column": "PLST",
+        "label": "Plastique"
+      }
+    ]
+  },
+  {
+    "nom": "Bouchon plastique",
+    "poubelle": "Jaune",
+    "accepted_materials": [
+      {
+        "slug": "bouchons-plastique",
+        "column": "BCHP",
+        "label": "Bouchons plastique"
+      },
+      {
+        "slug": "plastique",
+        "column": "PLST",
+        "label": "Plastique"
+      }
+    ]
+  },
+  {
+    "nom": "Barquette plastique alimentaire",
+    "poubelle": "Jaune",
+    "accepted_materials": [
+      {
+        "slug": "plastique",
+        "column": "PLST",
+        "label": "Plastique"
+      }
+    ]
+  },
+  {
+    "nom": "Opercule plastique",
+    "poubelle": "Jaune",
+    "accepted_materials": [
+      {
+        "slug": "plastique",
+        "column": "PLST",
+        "label": "Plastique"
+      }
+    ]
+  },
+  {
+    "nom": "Pot de fleur plastique",
+    "poubelle": "Jaune",
+    "accepted_materials": [
+      {
+        "slug": "plastique",
+        "column": "PLST",
+        "label": "Plastique"
+      }
+    ]
+  },
+  {
+    "nom": "Flacon produit ménager",
+    "poubelle": "Jaune",
+    "accepted_materials": [
+      {
+        "slug": "plastique",
+        "column": "PLST",
+        "label": "Plastique"
+      }
+    ]
+  },
+  {
+    "nom": "Bidon plastique",
+    "poubelle": "Jaune",
+    "accepted_materials": [
+      {
+        "slug": "plastique",
+        "column": "PLST",
+        "label": "Plastique"
+      }
+    ]
+  },
+  {
+    "nom": "Film étirable alimentaire",
+    "poubelle": "Noir",
+    "accepted_materials": [
+      {
+        "slug": "plastique",
+        "column": "PLST",
+        "label": "Plastique"
+      }
+    ]
+  },
+  {
+    "nom": "Paille plastique",
+    "poubelle": "Noir",
+    "accepted_materials": [
+      {
+        "slug": "plastique",
+        "column": "PLST",
+        "label": "Plastique"
+      }
+    ]
+  },
+  {
+    "nom": "Couverts jetables",
+    "poubelle": "Noir",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Assiette jetable plastique",
+    "poubelle": "Noir",
+    "accepted_materials": [
+      {
+        "slug": "plastique",
+        "column": "PLST",
+        "label": "Plastique"
+      }
+    ]
+  },
+  {
+    "nom": "Gobelet plastique",
+    "poubelle": "Noir",
+    "accepted_materials": [
+      {
+        "slug": "plastique",
+        "column": "PLST",
+        "label": "Plastique"
+      }
+    ]
+  },
+  {
+    "nom": "Emballage chips (sachet)",
+    "poubelle": "Noir",
+    "accepted_materials": [
+      {
+        "slug": "plastique",
+        "column": "PLST",
+        "label": "Plastique"
+      }
+    ]
+  },
+  {
+    "nom": "Pot de crème cosmétique",
+    "poubelle": "Jaune",
+    "accepted_materials": [
+      {
+        "slug": "plastique",
+        "column": "PLST",
+        "label": "Plastique"
+      }
+    ]
+  },
+  {
+    "nom": "Brosse à dents",
+    "poubelle": "Noir",
+    "accepted_materials": [
+      {
+        "slug": "plastique",
+        "column": "PLST",
+        "label": "Plastique"
+      }
+    ]
+  },
+  {
+    "nom": "Carte bancaire",
+    "poubelle": "Noir",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Papier bulle",
+    "poubelle": "Noir",
+    "accepted_materials": [
+      {
+        "slug": "papier-emballages",
+        "column": "PPR",
+        "label": "Papier / Emballages"
+      }
+    ]
+  },
+  {
+    "nom": "Mousse polyuréthane",
+    "poubelle": "Déchetterie",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Boîte en carton",
+    "poubelle": "Jaune",
+    "accepted_materials": [
+      {
+        "slug": "papier-emballages",
+        "column": "PPR",
+        "label": "Papier / Emballages"
+      }
+    ]
+  },
+  {
+    "nom": "Carton pizza",
+    "poubelle": "Noir",
+    "accepted_materials": [
+      {
+        "slug": "papier-emballages",
+        "column": "PPR",
+        "label": "Papier / Emballages"
+      }
+    ]
+  },
+  {
+    "nom": "Emballage carton liquide",
+    "poubelle": "Jaune",
+    "accepted_materials": [
+      {
+        "slug": "papier-emballages",
+        "column": "PPR",
+        "label": "Papier / Emballages"
+      }
+    ]
+  },
+  {
+    "nom": "Boîte de céréales",
+    "poubelle": "Jaune",
+    "accepted_materials": [
+      {
+        "slug": "papier-emballages",
+        "column": "PPR",
+        "label": "Papier / Emballages"
+      }
+    ]
+  },
+  {
+    "nom": "Brique de lait",
+    "poubelle": "Jaune",
+    "accepted_materials": [
+      {
+        "slug": "papier-emballages",
+        "column": "PPR",
+        "label": "Papier / Emballages"
+      }
+    ]
+  },
+  {
+    "nom": "Boîte carton pharmaceutique",
+    "poubelle": "Jaune",
+    "accepted_materials": [
+      {
+        "slug": "papier-emballages",
+        "column": "PPR",
+        "label": "Papier / Emballages"
+      }
+    ]
+  },
+  {
+    "nom": "Rouleau carton (WC)",
+    "poubelle": "Jaune",
+    "accepted_materials": [
+      {
+        "slug": "papier-emballages",
+        "column": "PPR",
+        "label": "Papier / Emballages"
+      }
+    ]
+  },
+  {
+    "nom": "Boîte d'archive",
+    "poubelle": "Jaune",
+    "accepted_materials": [
+      {
+        "slug": "papier-emballages",
+        "column": "PPR",
+        "label": "Papier / Emballages"
+      }
+    ]
+  },
+  {
+    "nom": "Journal / magazine",
+    "poubelle": "Jaune",
+    "accepted_materials": [
+      {
+        "slug": "papier-emballages",
+        "column": "PPR",
+        "label": "Papier / Emballages"
+      }
+    ]
+  },
+  {
+    "nom": "Papier essuie-tout usagé",
+    "poubelle": "Noir",
+    "accepted_materials": [
+      {
+        "slug": "papier-emballages",
+        "column": "PPR",
+        "label": "Papier / Emballages"
+      }
+    ]
+  },
+  {
+    "nom": "Mouchoir usagé",
+    "poubelle": "Noir",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Enveloppe",
+    "poubelle": "Jaune",
+    "accepted_materials": [
+      {
+        "slug": "papier-emballages",
+        "column": "PPR",
+        "label": "Papier / Emballages"
+      }
+    ]
+  },
+  {
+    "nom": "Ticket de caisse",
+    "poubelle": "Noir",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Papier cadeau pailleté",
+    "poubelle": "Noir",
+    "accepted_materials": [
+      {
+        "slug": "papier-emballages",
+        "column": "PPR",
+        "label": "Papier / Emballages"
+      }
+    ]
+  },
+  {
+    "nom": "Photo imprimée",
+    "poubelle": "Noir",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Annuaire téléphonique",
+    "poubelle": "Jaune",
+    "accepted_materials": [
+      {
+        "slug": "papier-emballages",
+        "column": "PPR",
+        "label": "Papier / Emballages"
+      }
+    ]
+  },
+  {
+    "nom": "Papier cadeau mat 100% papier",
+    "poubelle": "Jaune",
+    "accepted_materials": [
+      {
+        "slug": "papier-emballages",
+        "column": "PPR",
+        "label": "Papier / Emballages"
+      }
+    ]
+  },
+  {
+    "nom": "Post-it",
+    "poubelle": "Noir",
+    "accepted_materials": [
+      {
+        "slug": "papier-emballages",
+        "column": "PPR",
+        "label": "Papier / Emballages"
+      }
+    ]
+  },
+  {
+    "nom": "Bouteille en verre",
+    "poubelle": "Verre",
+    "accepted_materials": [
+      {
+        "slug": "verre",
+        "column": "VER",
+        "label": "Verre"
+      }
+    ]
+  },
+  {
+    "nom": "Pot en verre",
+    "poubelle": "Verre",
+    "accepted_materials": [
+      {
+        "slug": "verre",
+        "column": "VER",
+        "label": "Verre"
+      }
+    ]
+  },
+  {
+    "nom": "Verre cassé",
+    "poubelle": "Noir",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Bocal confiture",
+    "poubelle": "Verre",
+    "accepted_materials": [
+      {
+        "slug": "verre",
+        "column": "VER",
+        "label": "Verre"
+      }
+    ]
+  },
+  {
+    "nom": "Miroir",
+    "poubelle": "Déchetterie",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Verre à boire cassé",
+    "poubelle": "Déchetterie",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Vitres / fenêtres",
+    "poubelle": "Déchetterie",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Céramique cassée",
+    "poubelle": "Déchetterie",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Pyrex (plat four)",
+    "poubelle": "Déchetterie",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Canette aluminium",
+    "poubelle": "Jaune",
+    "accepted_materials": [
+      {
+        "slug": "metaux",
+        "column": "MET",
+        "label": "Métaux"
+      }
+    ]
+  },
+  {
+    "nom": "Boîte de conserve",
+    "poubelle": "Jaune",
+    "accepted_materials": [
+      {
+        "slug": "metaux",
+        "column": "MET",
+        "label": "Métaux"
+      }
+    ]
+  },
+  {
+    "nom": "Couvercle métallique",
+    "poubelle": "Jaune",
+    "accepted_materials": [
+      {
+        "slug": "metaux",
+        "column": "MET",
+        "label": "Métaux"
+      }
+    ]
+  },
+  {
+    "nom": "Papier aluminium",
+    "poubelle": "Noir",
+    "accepted_materials": [
+      {
+        "slug": "papier-emballages",
+        "column": "PPR",
+        "label": "Papier / Emballages"
+      }
+    ]
+  },
+  {
+    "nom": "Capsule café",
+    "poubelle": "Collecte spéciale",
+    "accepted_materials": [
+      {
+        "slug": "metaux",
+        "column": "MET",
+        "label": "Métaux"
+      }
+    ]
+  },
+  {
+    "nom": "Aérosol vide",
+    "poubelle": "Jaune",
+    "accepted_materials": [
+      {
+        "slug": "metaux",
+        "column": "MET",
+        "label": "Métaux"
+      }
+    ]
+  },
+  {
+    "nom": "Canette fer blanc",
+    "poubelle": "Jaune",
+    "accepted_materials": [
+      {
+        "slug": "metaux",
+        "column": "MET",
+        "label": "Métaux"
+      }
+    ]
+  },
+  {
+    "nom": "Barquette aluminium",
+    "poubelle": "Jaune",
+    "accepted_materials": [
+      {
+        "slug": "metaux",
+        "column": "MET",
+        "label": "Métaux"
+      }
+    ]
+  },
+  {
+    "nom": "Capsule Nespresso (alu)",
+    "poubelle": "Collecte spéciale",
+    "accepted_materials": [
+      {
+        "slug": "metaux",
+        "column": "MET",
+        "label": "Métaux"
+      }
+    ]
+  },
+  {
+    "nom": "Vis / boulons",
+    "poubelle": "Déchetterie",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Reste alimentaire",
+    "poubelle": "Compost",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Déchet végétal",
+    "poubelle": "Compost",
+    "accepted_materials": [
+      {
+        "slug": "dechets-verts",
+        "column": "GEEN",
+        "label": "Déchets verts"
+      }
+    ]
+  },
+  {
+    "nom": "Marc de café",
+    "poubelle": "Compost",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Épluchures légumes",
+    "poubelle": "Compost",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Coquilles d'œuf",
+    "poubelle": "Compost",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Sachet de thé",
+    "poubelle": "Compost",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Feuilles mortes",
+    "poubelle": "Vert",
+    "accepted_materials": [
+      {
+        "slug": "dechets-verts",
+        "column": "GEEN",
+        "label": "Déchets verts"
+      }
+    ]
+  },
+  {
+    "nom": "Branche de jardin",
+    "poubelle": "Vert",
+    "accepted_materials": [
+      {
+        "slug": "dechets-verts",
+        "column": "GEEN",
+        "label": "Déchets verts"
+      }
+    ]
+  },
+  {
+    "nom": "Gazon tondu",
+    "poubelle": "Vert",
+    "accepted_materials": [
+      {
+        "slug": "dechets-verts",
+        "column": "GEEN",
+        "label": "Déchets verts"
+      }
+    ]
+  },
+  {
+    "nom": "Marc de café + filtre",
+    "poubelle": "Compost",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Cendre de cheminée (froide)",
+    "poubelle": "Compost",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Pile AA/AAA",
+    "poubelle": "Collecte spéciale",
+    "accepted_materials": [
+      {
+        "slug": "piles",
+        "column": "PIL",
+        "label": "Piles"
+      }
+    ]
+  },
+  {
+    "nom": "Ampoule classique",
+    "poubelle": "Collecte spéciale",
+    "accepted_materials": [
+      {
+        "slug": "ampoules",
+        "column": "AMPL",
+        "label": "Ampoules"
+      }
+    ]
+  },
+  {
+    "nom": "Téléphone portable",
+    "poubelle": "Collecte spéciale",
+    "accepted_materials": [
+      {
+        "slug": "telephones",
+        "column": "TLF",
+        "label": "Téléphones"
+      }
+    ]
+  },
+  {
+    "nom": "Cartouche d'encre",
+    "poubelle": "Collecte spéciale",
+    "accepted_materials": [
+      {
+        "slug": "cartouches",
+        "column": "CER",
+        "label": "Cartouches"
+      }
+    ]
+  },
+  {
+    "nom": "Câble électrique",
+    "poubelle": "Collecte spéciale",
+    "accepted_materials": [
+      {
+        "slug": "materiel-informatique",
+        "column": "INF",
+        "label": "Matériel informatique"
+      }
+    ]
+  },
+  {
+    "nom": "Ampoule LED",
+    "poubelle": "Collecte spéciale",
+    "accepted_materials": [
+      {
+        "slug": "ampoules",
+        "column": "AMPL",
+        "label": "Ampoules"
+      }
+    ]
+  },
+  {
+    "nom": "Ampoule fluocompacte",
+    "poubelle": "Collecte spéciale",
+    "accepted_materials": [
+      {
+        "slug": "ampoules",
+        "column": "AMPL",
+        "label": "Ampoules"
+      }
+    ]
+  },
+  {
+    "nom": "Batterie voiture",
+    "poubelle": "Déchetterie",
+    "accepted_materials": [
+      {
+        "slug": "piles",
+        "column": "PIL",
+        "label": "Piles"
+      }
+    ]
+  },
+  {
+    "nom": "Chargeur téléphone",
+    "poubelle": "Collecte spéciale",
+    "accepted_materials": [
+      {
+        "slug": "telephones",
+        "column": "TLF",
+        "label": "Téléphones"
+      }
+    ]
+  },
+  {
+    "nom": "PC portable",
+    "poubelle": "Collecte spéciale",
+    "accepted_materials": [
+      {
+        "slug": "materiel-informatique",
+        "column": "INF",
+        "label": "Matériel informatique"
+      }
+    ]
+  },
+  {
+    "nom": "Tablette numérique",
+    "poubelle": "Collecte spéciale",
+    "accepted_materials": [
+      {
+        "slug": "materiel-informatique",
+        "column": "INF",
+        "label": "Matériel informatique"
+      }
+    ]
+  },
+  {
+    "nom": "Écran TV / moniteur",
+    "poubelle": "Collecte spéciale",
+    "accepted_materials": [
+      {
+        "slug": "materiel-informatique",
+        "column": "INF",
+        "label": "Matériel informatique"
+      }
+    ]
+  },
+  {
+    "nom": "Batterie lithium-ion",
+    "poubelle": "Collecte spéciale",
+    "accepted_materials": [
+      {
+        "slug": "piles",
+        "column": "PIL",
+        "label": "Piles"
+      }
+    ]
+  },
+  {
+    "nom": "Pile bouton",
+    "poubelle": "Collecte spéciale",
+    "accepted_materials": [
+      {
+        "slug": "piles",
+        "column": "PIL",
+        "label": "Piles"
+      }
+    ]
+  },
+  {
+    "nom": "Disque dur",
+    "poubelle": "Collecte spéciale",
+    "accepted_materials": [
+      {
+        "slug": "materiel-informatique",
+        "column": "INF",
+        "label": "Matériel informatique"
+      }
+    ]
+  },
+  {
+    "nom": "Vêtement usagé",
+    "poubelle": "Collecte spéciale",
+    "accepted_materials": [
+      {
+        "slug": "tissus-vetements",
+        "column": "VET",
+        "label": "Tissus / Vêtements"
+      }
+    ]
+  },
+  {
+    "nom": "Chaussures usagées",
+    "poubelle": "Collecte spéciale",
+    "accepted_materials": [
+      {
+        "slug": "chaussures",
+        "column": "CHS",
+        "label": "Chaussures"
+      }
+    ]
+  },
+  {
+    "nom": "Moquette",
+    "poubelle": "Déchetterie",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Palette bois",
+    "poubelle": "Déchetterie",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Meuble en bois",
+    "poubelle": "Déchetterie",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Peinture",
+    "poubelle": "Déchetterie",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Huile de vidange",
+    "poubelle": "Déchetterie",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Huile de friture usagée",
+    "poubelle": "Collecte spéciale",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Solvant",
+    "poubelle": "Déchetterie",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Bombe insecticide",
+    "poubelle": "Déchetterie",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Pesticide",
+    "poubelle": "Déchetterie",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Thermomètre mercure",
+    "poubelle": "Collecte spéciale",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Médicament périmé",
+    "poubelle": "Collecte spéciale",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Seringue médicale",
+    "poubelle": "Collecte spéciale",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Déchet de bricolage",
+    "poubelle": "Déchetterie",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Couche usage unique",
+    "poubelle": "Noir",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Rasoir jetable",
+    "poubelle": "Noir",
+    "accepted_materials": [
+      {
+        "slug": "plastique",
+        "column": "PLST",
+        "label": "Plastique"
+      }
+    ]
+  },
+  {
+    "nom": "Bouchon liège",
+    "poubelle": "Collecte spéciale",
+    "accepted_materials": [
+      {
+        "slug": "bouchons-liege",
+        "column": "BCHL",
+        "label": "Bouchons liège"
+      }
+    ]
+  },
+  {
+    "nom": "Stylo à bille",
+    "poubelle": "Noir",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Matelas",
+    "poubelle": "Déchetterie",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Pneu de voiture",
+    "poubelle": "Déchetterie",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Gravats / béton",
+    "poubelle": "Déchetterie",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Laine de verre",
+    "poubelle": "Déchetterie",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Mégot de cigarette",
+    "poubelle": "Noir",
+    "accepted_materials": null
+  },
+  {
+    "nom": "Litière chat",
+    "poubelle": "Noir",
+    "accepted_materials": null
+  }
 ]
