@@ -16,6 +16,24 @@ IMAGE_EXTENSIONS: Final[frozenset[str]] = frozenset(
 )
 
 
+def to_rgb(image: Image.Image) -> Image.Image:
+    """Convert any image to RGB, flattening transparency on white.
+
+    Args:
+        image: Source image in any mode.
+
+    Returns:
+        An RGB image.
+    """
+    if image.mode == "P" and "transparency" in image.info:
+        image = image.convert("RGBA")
+    if image.mode in ("RGBA", "LA"):
+        background = Image.new("RGB", image.size, (255, 255, 255))
+        background.paste(image, mask=image.getchannel("A"))
+        return background
+    return image.convert("RGB")
+
+
 class ImageFetcher:
     """Load labelled images from a local dataset directory.
 
@@ -173,7 +191,7 @@ class ImageFetcher:
         """
         try:
             with Image.open(path) as image:
-                return image.convert("RGB")
+                return to_rgb(image)
         except (OSError, Image.DecompressionBombError) as error:
             logger.warning("Cannot open image '%s': %s", path, error)
             return None
