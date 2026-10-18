@@ -109,6 +109,6 @@ class QdrantPayload(MaterialMetadata):
 class QdrantPoint(BaseModel):
     """Fully structured point ready for Qdrant insertion."""
 
-    point_id: int = Field(..., ge=0)
+    point_id: int | str
     vector: list[float]
     payload: QdrantPayload

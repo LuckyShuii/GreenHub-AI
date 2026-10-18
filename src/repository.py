@@ -46,34 +46,24 @@ class VectorRepository:
         )
         logger.info("Created collection '%s'.", collection_name)
 
-    async def point_exists(self, collection_name: str, point_id: int) -> bool:
-        """Check whether a point exists in a region collection.
-
-        Args:
-            collection_name: Name of the region collection.
-            point_id: Identifier of the point to look up.
-
-        Returns:
-            True if the point exists, False otherwise.
-
-        """
+    async def point_exists(self, collection_name: str, point_id: int | str) -> bool:
+        """Return False only for a genuine absence; re-raise other errors."""
         try:
             records = await self._client.retrieve(
-                collection_name=collection_name,
-                ids=[point_id],
+                collection_name=collection_name, ids=[point_id]
             )
-            return len(records) > 0
         except Exception as error:  # noqa: BLE001
-            logger.warning(
-                "Existence check failed in '%s' for ID %d: %s",
-                collection_name,
-                point_id,
-                error,
+            if getattr(error, "status_code", None) == 404:
+                return False
+            logger.exception(
+                "Existence check failed in '%s' for ID %s.", collection_name, point_id
             )
-            return False
+            raise
+        return len(records) > 0
+
 
     async def update_payload(
-        self, collection_name: str, point_ids: list[int], payload: QdrantPoint
+        self, collection_name: str, point_ids: list[int | str], payload: QdrantPoint
     ) -> bool:
         """Refresh metadata for existing points without re-embedding images."""
         try:
@@ -82,25 +72,14 @@ class VectorRepository:
                 payload=payload.payload.model_dump(),
                 points=point_ids,
             )
-            return True
-        except Exception as error:  # noqa: BLE001
-            logger.warning(
-                "Payload refresh failed in '%s' for IDs %s: %s",
-                collection_name, point_ids, error
-            )
-            return False
+        except Exception:  # noqa: BLE001
+            logger.exception("Payload refresh failed in '%s' for IDs %s.", collection_name, point_ids)
+            raise
+        return True
+
 
     async def upsert(self, collection_name: str, point: QdrantPoint) -> bool:
-        """Insert a point into a region collection if absent.
-
-        Args:
-            collection_name: Name of the region collection.
-            point: Fully structured point to insert.
-
-        Returns:
-            True if the point was inserted, False otherwise.
-
-        """
+        """Insert or replace a point in a region collection."""
         try:
             await self._client.upsert(
                 collection_name=collection_name,
@@ -112,15 +91,8 @@ class VectorRepository:
                     )
                 ],
             )
-            logger.debug(
-                "Upserted point %d into '%s'.", point.point_id, collection_name
-            )
-            return True
-        except Exception as error:  # noqa: BLE001
-            logger.warning(
-                "Upsert failed in '%s' for ID %d: %s",
-                collection_name,
-                point.point_id,
-                error,
-            )
-            return False
+        except Exception:  # noqa: BLE001
+            logger.exception("Upsert failed in '%s' for ID %s.", collection_name, point.point_id)
+            raise
+        logger.debug("Upserted point %s into '%s'.", point.point_id, collection_name)
+        return True
