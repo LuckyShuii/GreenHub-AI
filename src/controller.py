@@ -2,6 +2,7 @@
 
 from PIL import Image
 
+from .embedder import ImageEmbedder
 from .model import Model, Response
 
 
@@ -10,18 +11,11 @@ class Controller:
 
     model: Model
 
-    def __init__(self) -> None:
-        """Instantiate the underlying model wrapper."""
-        self.model = Model()
+    def __init__(self, embedder: ImageEmbedder | None = None) -> None:
+        self.model = Model(embedder)
+
+    def set_embedder(self, embedder: ImageEmbedder) -> None:
+        self.model.set_embedder(embedder)
 
     async def get_model_response(self, image: Image.Image, region: str) -> Response:
-        """Delegate classification to the model asynchronously.
-
-        Args:
-            image: The PIL image to classify.
-
-        Returns:
-            The model Response for the given image.
-
-        """
         return await self.model.predict_material(image, region)

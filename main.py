@@ -14,7 +14,6 @@ from src.viewer import Viewer
 
 servapp = Viewer()
 
-
 @servapp.post("/greener/upload/dechets")
 async def upload_file(
     file: UploadFile = File(...),
@@ -35,11 +34,19 @@ async def upload_file(
             unknown (404).
 
     """
+    settings = get_settings()
     content = await file.read()
+
+    if len(content) > settings.max_upload_size:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File exceeds {settings.max_upload_size} bytes.",
+        )
+
     try:
         image = Image.open(io.BytesIO(content))
         image.load()
-    except UnidentifiedImageError as exc:
+    except (UnidentifiedImageError, OSError) as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Uploaded file is not a valid image.",
@@ -48,14 +55,10 @@ async def upload_file(
     try:
         response = await servapp.get_response(image, region)
     except UnknownRegionError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(exc),
-        ) from exc
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
     except NoMatchError as exc:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=str(exc),
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc)
         ) from exc
 
     return JSONResponse(jsonable_encoder(response))

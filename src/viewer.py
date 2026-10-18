@@ -21,21 +21,24 @@ from .repository import VectorRepository
 logger = get_logger(__name__)
 
 
-async def run_startup_indexing() -> None:
+async def run_startup_indexing(embedder: ImageEmbedder | None = None) -> None:
     """Discover regions and index each into its own Qdrant collection."""
     settings = get_settings()
-    client = AsyncQdrantClient(
-        host=settings.qdrant_host, port=settings.qdrant_port
-    )
-    embedder = ImageEmbedder(settings.embedding_model_path, settings.device)
+    client = AsyncQdrantClient(host=settings.qdrant_host, port=settings.qdrant_port)
+
+    if embedder is None:
+        embedder = ImageEmbedder(
+            settings.embedding_model_path,
+            settings.device,
+            asyncio.Semaphore(settings.max_concurrent_uploads),
+        )
+
     repository = VectorRepository(client)
-    semaphore = asyncio.Semaphore(settings.max_concurrent_uploads)
     fetcher = ImageFetcher(
-        semaphore=semaphore,
-        root_dir=settings.image_dir,)
-    indexer = RegionIndexer(
-        embedder, fetcher, repository, settings.images_per_label
+        semaphore=asyncio.Semaphore(settings.max_concurrent_uploads),
+        root_dir=settings.image_dir,
     )
+    indexer = RegionIndexer(embedder, fetcher, repository, settings.images_per_label)
 
     try:
         region_files = discover_region_files(settings.data_dir)
@@ -44,36 +47,38 @@ async def run_startup_indexing() -> None:
         await client.close()
         return
 
-    for json_path in region_files:
-        collection_name = json_path.stem
-        try:
-            payloads = load_region_payloads(json_path)
-        except ValueError as error:
-            logger.error("Skipping region '%s': %s", collection_name, error)
-            continue
-        await indexer.index_region(collection_name, payloads)
+    try:
+        for json_path in region_files:
+            collection_name = json_path.stem
+            try:
+                payloads = load_region_payloads(json_path)
+            except ValueError as error:
+                logger.error("Skipping region '%s': %s", collection_name, error)
+                continue
+            await indexer.index_region(collection_name, payloads)
+    finally:
+        await client.close()
 
-    await client.close()
     logger.info("Startup indexing finished for all regions.")
 
 
 async def lifespan(app: "Viewer") -> AsyncIterator[None]:
-    """Run multi-region indexing at server startup.
-
-    Args:
-        app: The Viewer application instance.
-
-    Yields:
-        Control back to the application once indexing completes.
-
-    """
+    """Load the model once, share it, then run indexing."""
     settings = get_settings()
     configure_logging(settings.log_level)
-    logger.info("Server startup: launching multi-region indexing.")
+
+    embedder = ImageEmbedder(
+        settings.embedding_model_path,
+        settings.device,
+        asyncio.Semaphore(settings.max_concurrent_uploads),
+    )
+    app.controller.set_embedder(embedder)
+
     try:
-        await run_startup_indexing()
+        await run_startup_indexing(embedder)
     except Exception as error:  # noqa: BLE001
         logger.exception("Unexpected error during startup indexing: %s", error)
+
     yield
     logger.info("Server shutdown.")
 
@@ -84,23 +89,8 @@ class Viewer(FastAPI):
     controller: Controller
 
     def __init__(self, **kwargs: object) -> None:
-        """Initialize the FastAPI app, controller and lifespan.
-
-        Args:
-            **kwargs: Keyword arguments forwarded to FastAPI.
-
-        """
         super().__init__(lifespan=lifespan, **kwargs)  # type: ignore
         self.controller = Controller()
 
     async def get_response(self, image: Image.Image, region: str) -> Response:
-        """Return the model response for an uploaded image.
-
-        Args:
-            image: The PIL image to classify.
-
-        Returns:
-            The classification Response.
-
-        """
         return await self.controller.get_model_response(image, region)

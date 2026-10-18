@@ -21,24 +21,14 @@ logger = logging.getLogger(__name__)
 
 
 class ImageEmbedder:
-    """Encode images into dense vectors using a locally stored DINOv2 model.
+    """Encode images into dense vectors using a locally stored DINOv2 model."""
 
-    Attributes:
-        dimension: Dimensionality of the produced embedding vectors.
-
-    """
-
-    def __init__(self, model_path: Path, device: str) -> None:
-        """Initialize the embedder from a local model directory.
-
-        Args:
-            model_path: Local directory containing the model files.
-            device: Torch device used for inference.
-
-        Raises:
-            FileNotFoundError: If the model is missing from model_path.
-
-        """
+    def __init__(
+        self,
+        model_path: Path,
+        device: str,
+        semaphore: asyncio.Semaphore | None = None,
+    ) -> None:
         if not is_model_available(model_path):
             message = (
                 f"Embedding model not found in '{model_path}'. "
@@ -48,27 +38,18 @@ class ImageEmbedder:
 
         logger.info("Loading embedding model from '%s'.", model_path)
         self._device = device
+        self._semaphore = semaphore or asyncio.Semaphore(1)
         self._processor = AutoImageProcessor.from_pretrained(
-            model_path,
-            local_files_only=True,
+            model_path, local_files_only=True
         )
         self._model = AutoModel.from_pretrained(
-            model_path,
-            local_files_only=True,
+            model_path, local_files_only=True
         ).to(device)
         self._model.eval()
         self.dimension: int = self._model.config.hidden_size
 
     def _embed_sync(self, image: Image.Image) -> list[float]:
-        """Synchronously embed a single image.
-
-        Args:
-            image: PIL image to encode.
-
-        Returns:
-            The embedding vector as a list of floats.
-
-        """
+        """Synchronously embed a single image."""
         inputs = self._processor(images=image, return_tensors="pt").to(self._device)
         with torch.no_grad():
             outputs = self._model(**inputs)
@@ -77,13 +58,6 @@ class ImageEmbedder:
         return normalized.cpu().to(torch.float32).numpy().astype(np.float32).tolist()
 
     async def embed(self, image: Image.Image) -> list[float]:
-        """Asynchronously embed a single image without blocking the loop.
-
-        Args:
-            image: PIL image to encode.
-
-        Returns:
-            The embedding vector as a list of floats.
-
-        """
-        return await asyncio.to_thread(self._embed_sync, image)
+        """Embed an image without blocking the event loop."""
+        async with self._semaphore:
+            return await asyncio.to_thread(self._embed_sync, image)

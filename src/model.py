@@ -60,27 +60,30 @@ def parse_accepted_materials(
 class Model:
     """Asynchronous waste classifier backed by Qdrant similarity search."""
 
-    def __init__(self) -> None:
-        """Create the embedder and the Qdrant client from settings."""
+    def __init__(self, embedder: ImageEmbedder | None = None) -> None:
         settings = get_settings()
-        self._embedder = ImageEmbedder(settings.embedding_model_path, settings.device)
+        self._embedder = embedder
         self._client = AsyncQdrantClient(
             host=settings.qdrant_host, port=settings.qdrant_port
         )
 
+    def set_embedder(self, embedder: ImageEmbedder) -> None:
+        """Inject the application-wide image embedder."""
+        self._embedder = embedder
+
     async def predict_material(self, image: Image.Image, region: str) -> Response:
-        """Classify an image and return the stored waste metadata."""
         if not await self._client.collection_exists(region):
             raise UnknownRegionError(region)
+        if self._embedder is None:
+            raise RuntimeError("Image embedder has not been initialized.")
+
         vector = await self._embedder.embed(image)
         results = await self._client.query_points(
-            collection_name=region,
-            query=vector,
-            limit=1,
-            with_payload=True,
+            collection_name=region, query=vector, limit=1, with_payload=True
         )
         if not results.points:
             raise NoMatchError(region)
+
         payload: dict[str, Any] = results.points[0].payload or {}
         return Response(
             material_name=str(payload.get("nom", "unknown")),
