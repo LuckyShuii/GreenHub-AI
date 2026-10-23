@@ -10,6 +10,7 @@ from pydantic import ValidationError
 
 from logging_config import get_logger
 
+from .materials import _normalize
 from .schemas import QdrantPayload, WasteItem
 
 logger = get_logger(__name__)
@@ -56,3 +57,31 @@ def load_region_payloads(json_path: Path) -> list[QdrantPayload]:
         )
     logger.info("Loaded %d items for region '%s'.", len(payloads), region_name)
     return payloads
+
+
+def lookup_by_name(region: str, name: str) -> dict[str, Any] | None:
+    """Find a waste entry in a region file by name (case/accent insensitive).
+
+    Returns the raw entry dict (suitable for building a Response) or None.
+    """
+    if not name:
+        return None
+    needle = _normalize(name)
+    candidates = [path for path in discover_region_files(Path(".")) if path.stem == region]
+    if not candidates:
+        # Fallback: scan all region files for the requested region name.
+        candidates = list(Path(".").glob(f"{region}.json"))
+    for json_path in candidates:
+        try:
+            raw = json.loads(json_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, FileNotFoundError):
+            continue
+        if not isinstance(raw, list):
+            continue
+        for entry in raw:
+            if not isinstance(entry, dict):
+                continue
+            entry_name = entry.get("nom")
+            if isinstance(entry_name, str) and _normalize(entry_name) == needle:
+                return entry
+    return None

@@ -1,66 +1,79 @@
-"""Application entrypoint exposing the waste classification API."""
+"""FastAPI entry point exposing the Greener classification API."""
 
-import io
+from __future__ import annotations
 
-import uvicorn
-from fastapi import File, HTTPException, UploadFile, status
-from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse
-from PIL import Image, UnidentifiedImageError
+from contextlib import asynccontextmanager
+from io import BytesIO
+
+from fastapi import FastAPI, File, HTTPException, Query, UploadFile
+from PIL import Image
 
 from configs import get_settings
+from logging_config import configure_logging, get_logger
 from src.model import NoMatchError, UnknownRegionError
+from src.schemas import (
+    ManualMaterialRequest,
+    MatchResponse,
+    UnknownMaterialError,
+)
 from src.viewer import Viewer
 
-servapp = Viewer()
 
-
-@servapp.post("/greener/upload/dechets")
-async def upload_file(
-    file: UploadFile = File(...),
-    region: str = "ile_de_france",
-) -> JSONResponse:
-    """Classify an uploaded waste image for a given region.
-
-    Args:
-        file: The uploaded image file.
-        region: The user's region, matching a Qdrant collection name.
-
-    Returns:
-        A JSON response with the material name and bin color.
-
-    Raises:
-        HTTPException: If the file is not a valid image (400), if the
-            material cannot be classified (422), or if the region is
-            unknown (404).
-
-    """
-    content = await file.read()
-    try:
-        image = Image.open(io.BytesIO(content))
-        image.load()
-    except UnidentifiedImageError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Uploaded file is not a valid image.",
-        ) from exc
-
-    try:
-        response = await servapp.get_response(image, region)
-    except UnknownRegionError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(exc),
-        ) from exc
-    except NoMatchError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=str(exc),
-        ) from exc
-
-    return JSONResponse(jsonable_encoder(response))
-
-
-if __name__ == "__main__":
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Configure logging and prepare the shared viewer at startup."""
     settings = get_settings()
-    uvicorn.run(app=servapp, host=settings.ai_host, port=settings.ai_port)
+    configure_logging(settings.log_level)
+    app.state.viewer = Viewer()
+    app.state.logger = get_logger("greener.main")
+    app.state.logger.info("Greener API ready.")
+    yield
+
+
+app = FastAPI(title="Greener Waste Classifier", lifespan=lifespan)
+
+
+def _decode_image(raw: bytes) -> Image.Image:
+    """Decode raw bytes into a Pillow image or raise HTTPException(400)."""
+    try:
+        image = Image.open(BytesIO(raw))
+        image.load()
+        return image
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=400, detail=f"Invalid image: {exc}") from exc
+
+
+@app.post(
+    "/greener/upload/dechets",
+    response_model=None,
+)
+async def upload_dechets(
+    file: UploadFile = File(...),
+    region: str = Query("ile_de_france", min_length=1),
+):
+    """Classify an uploaded waste image for the given region."""
+    viewer: Viewer = app.state.viewer
+    raw = await file.read()
+    image = _decode_image(raw)
+    try:
+        result = await viewer.controller.classify(image, region)
+    except UnknownRegionError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except NoMatchError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return result
+
+
+@app.post(
+    "/greener/upload/dechets/confirm",
+    response_model=MatchResponse,
+)
+async def confirm_dechets(request: ManualMaterialRequest) -> MatchResponse:
+    """Confirm a manual user selection from a previous needs_choice response."""
+    viewer: Viewer = app.state.viewer
+    try:
+        return await viewer.confirm(request)
+    except UnknownMaterialError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc

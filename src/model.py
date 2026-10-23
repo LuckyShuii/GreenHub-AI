@@ -12,7 +12,14 @@ from configs import get_settings
 from logging_config import get_logger
 
 from .embedder import ImageEmbedder
-from .schemas import AcceptedMaterial, MaterialMetadata
+from .materials import candidate_from_payload, deduplicate_candidates
+from .schemas import (
+    AcceptedMaterial,
+    CandidateResponse,
+    MatchResponse,
+    MaterialCandidate,
+    MaterialMetadata,
+)
 
 logger = get_logger(__name__)
 
@@ -27,7 +34,7 @@ class UnknownRegionError(Exception):
 
 
 class NoMatchError(Exception):
-    """Raised when no similar reference vector is found in Qdrant."""
+    """Raised when Qdrant returns no candidate at all."""
 
     def __init__(self, region: str) -> None:
         """Store the region in which no match was found."""
@@ -35,12 +42,8 @@ class NoMatchError(Exception):
         super().__init__(f"No match found in region: {region}")
 
 
-class Response(BaseModel):
-    """Public prediction response without the internal similarity score."""
-
-    material_name: str
-    bin_color: str
-    accepted_materials: list[AcceptedMaterial] | None = None
+# Public classification result. The internal similarity score never leaks.
+ClassificationResult = MatchResponse | CandidateResponse
 
 
 def parse_accepted_materials(
@@ -60,30 +63,90 @@ def parse_accepted_materials(
 class Model:
     """Asynchronous waste classifier backed by Qdrant similarity search."""
 
-    def __init__(self) -> None:
-        """Create the embedder and the Qdrant client from settings."""
+    def __init__(self, embedder: ImageEmbedder | None = None) -> None:
         settings = get_settings()
-        self._embedder = ImageEmbedder(settings.embedding_model_path, settings.device)
+        self._embedder = embedder
         self._client = AsyncQdrantClient(
             host=settings.qdrant_host, port=settings.qdrant_port
         )
 
-    async def predict_material(self, image: Image.Image, region: str) -> Response:
-        """Classify an image and return the stored waste metadata."""
+    def set_embedder(self, embedder: ImageEmbedder) -> None:
+        """Inject the application-wide image embedder."""
+        self._embedder = embedder
+
+    async def classify(self, image: Image.Image, region: str) -> ClassificationResult:
+        """Classify a waste image, returning a match or candidate list.
+
+        The similarity score is read from ``point.score`` and compared to
+        ``settings.similarity_threshold``. It is never propagated to the
+        response object.
+        """
         if not await self._client.collection_exists(region):
             raise UnknownRegionError(region)
+        if self._embedder is None:
+            raise RuntimeError("Image embedder has not been initialized.")
+
+        settings = get_settings()
+        threshold = settings.similarity_threshold
+        top_k = settings.top_k
+
         vector = await self._embedder.embed(image)
         results = await self._client.query_points(
             collection_name=region,
             query=vector,
-            limit=1,
+            limit=top_k,
             with_payload=True,
         )
         if not results.points:
             raise NoMatchError(region)
-        payload: dict[str, Any] = results.points[0].payload or {}
-        return Response(
-            material_name=str(payload.get("nom", "unknown")),
-            bin_color=str(payload.get("poubelle", "unknown")),
-            accepted_materials=parse_accepted_materials(payload),
+
+        # Sort by score descending so the first point is the best match.
+        scored_points = sorted(
+            results.points,
+            key=lambda p: getattr(p, "score", 0.0) or 0.0,
+            reverse=True,
         )
+
+        best = scored_points[0]
+        best_score: float = getattr(best, "score", 0.0) or 0.0
+        best_payload: dict[str, Any] = best.payload or {}
+
+        if best_score >= threshold:
+            return MatchResponse(
+                material_name=str(best_payload.get("nom", "unknown")),
+                bin_color=str(best_payload.get("poubelle", "unknown")),
+                accepted_materials=parse_accepted_materials(best_payload),
+            )
+
+        candidates = deduplicate_candidates(
+            candidate_from_payload(point.payload or {}) for point in scored_points
+        )
+        logger.info(
+            "Below threshold (%.3f < %.3f) for region '%s': %d candidate(s).",
+            best_score,
+            threshold,
+            region,
+            len(candidates),
+        )
+        return CandidateResponse(candidates=candidates)
+
+
+class Response(BaseModel):
+    """Backward-compatible alias for the matched response."""
+
+    material_name: str
+    bin_color: str
+    accepted_materials: list[AcceptedMaterial] | None = None
+
+
+# Re-export for backwards compatibility with existing imports.
+__all__ = [
+    "CandidateResponse",
+    "ClassificationResult",
+    "MatchResponse",
+    "MaterialCandidate",
+    "Model",
+    "NoMatchError",
+    "Response",
+    "UnknownRegionError",
+]

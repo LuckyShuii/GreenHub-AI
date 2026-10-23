@@ -1,106 +1,41 @@
-"""Startup indexing integration for the FastAPI viewer."""
+"""Viewer (presentation) layer wrapping the Controller for the FastAPI app."""
 
-import asyncio
-from collections.abc import AsyncIterator
+from __future__ import annotations
 
-from fastapi import FastAPI
+from io import BytesIO
+from typing import Union
+
 from PIL import Image
-from qdrant_client import AsyncQdrantClient
-
-from configs import get_settings
-from logging_config import configure_logging, get_logger
 
 from .controller import Controller
-from .embedder import ImageEmbedder
-from .fetcher import ImageFetcher
-from .indexer import RegionIndexer
-from .model import Response
-from .regions import discover_region_files, load_region_payloads
-from .repository import VectorRepository
+from .schemas import (
+    CandidateResponse,
+    ManualMaterialRequest,
+    MatchResponse,
+)
 
-logger = get_logger(__name__)
+Response = Union[MatchResponse, CandidateResponse]
 
 
-async def run_startup_indexing() -> None:
-    """Discover regions and index each into its own Qdrant collection."""
-    settings = get_settings()
-    client = AsyncQdrantClient(
-        host=settings.qdrant_host, port=settings.qdrant_port
-    )
-    embedder = ImageEmbedder(settings.embedding_model_path, settings.device)
-    repository = VectorRepository(client)
-    semaphore = asyncio.Semaphore(settings.max_concurrent_uploads)
-    fetcher = ImageFetcher(
-        semaphore=semaphore,
-        root_dir=settings.image_dir,)
-    indexer = RegionIndexer(
-        embedder, fetcher, repository, settings.images_per_label
-    )
+class Viewer:
+    """Thin async wrapper around :class:`Controller` for the HTTP layer."""
 
-    try:
-        region_files = discover_region_files(settings.data_dir)
-    except FileNotFoundError as error:
-        logger.error("Cannot start indexing: %s", error)
-        await client.close()
-        return
+    def __init__(self, controller: Controller | None = None) -> None:
+        self.controller = controller or Controller()
 
-    for json_path in region_files:
-        collection_name = json_path.stem
+    async def get_response(self, image_bytes: bytes, region: str) -> Response:
+        """Decode the uploaded image and ask the controller to classify it.
+
+        Returns a :class:`MatchResponse` when the classifier is confident,
+        or a :class:`CandidateResponse` when the user must disambiguate.
+        """
         try:
-            payloads = load_region_payloads(json_path)
-        except ValueError as error:
-            logger.error("Skipping region '%s': %s", collection_name, error)
-            continue
-        await indexer.index_region(collection_name, payloads)
+            image = Image.open(BytesIO(image_bytes))
+            image.load()
+        except Exception as exc:  # noqa: BLE001
+            raise ValueError("Invalid image payload.") from exc
+        return await self.controller.classify(image, region)
 
-    await client.close()
-    logger.info("Startup indexing finished for all regions.")
-
-
-async def lifespan(app: "Viewer") -> AsyncIterator[None]:
-    """Run multi-region indexing at server startup.
-
-    Args:
-        app: The Viewer application instance.
-
-    Yields:
-        Control back to the application once indexing completes.
-
-    """
-    settings = get_settings()
-    configure_logging(settings.log_level)
-    logger.info("Server startup: launching multi-region indexing.")
-    try:
-        await run_startup_indexing()
-    except Exception as error:  # noqa: BLE001
-        logger.exception("Unexpected error during startup indexing: %s", error)
-    yield
-    logger.info("Server shutdown.")
-
-
-class Viewer(FastAPI):
-    """FastAPI application holding a controller instance."""
-
-    controller: Controller
-
-    def __init__(self, **kwargs: object) -> None:
-        """Initialize the FastAPI app, controller and lifespan.
-
-        Args:
-            **kwargs: Keyword arguments forwarded to FastAPI.
-
-        """
-        super().__init__(lifespan=lifespan, **kwargs)  # type: ignore
-        self.controller = Controller()
-
-    async def get_response(self, image: Image.Image, region: str) -> Response:
-        """Return the model response for an uploaded image.
-
-        Args:
-            image: The PIL image to classify.
-
-        Returns:
-            The classification Response.
-
-        """
-        return await self.controller.get_model_response(image, region)
+    async def confirm(self, request: ManualMaterialRequest) -> MatchResponse:
+        """Resolve a manual user selection to a confident :class:`MatchResponse`."""
+        return await self.controller.resolve_manual(request)
