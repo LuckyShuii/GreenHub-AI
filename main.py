@@ -5,6 +5,7 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 from io import BytesIO
 
+import uvicorn
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from PIL import Image
 
@@ -17,7 +18,6 @@ from src.schemas import (
     UnknownMaterialError,
 )
 from src.viewer import Viewer
-import uvicorn
 
 
 @asynccontextmanager

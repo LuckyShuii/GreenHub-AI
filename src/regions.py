@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import re
+import unicodedata
 from pathlib import Path
 from typing import Any
 
@@ -13,7 +15,22 @@ from logging_config import get_logger
 from .materials import _normalize
 from .schemas import QdrantPayload, WasteItem
 
+_REGION_SEPARATORS: re.Pattern[str] = re.compile(r"[\s_\-']+")
+
+
 logger = get_logger(__name__)
+
+
+def normalize_region_key(value: str) -> str:
+    """Return a canonical key for comparing region identifiers.
+
+    Diacritics are removed, the value is case-folded and any run of spaces,
+    underscores, hyphens or apostrophes is collapsed into a single underscore.
+    """
+    decomposed: str = unicodedata.normalize("NFKD", value)
+    ascii_only: str = decomposed.encode("ascii", "ignore").decode("ascii")
+    folded: str = ascii_only.casefold().strip()
+    return _REGION_SEPARATORS.sub("_", folded).strip("_")
 
 
 def discover_region_files(data_dir: Path) -> list[Path]:
