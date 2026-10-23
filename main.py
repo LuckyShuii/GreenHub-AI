@@ -17,6 +17,7 @@ from src.schemas import (
     UnknownMaterialError,
 )
 from src.viewer import Viewer
+import uvicorn
 
 
 @asynccontextmanager
@@ -77,3 +78,7 @@ async def confirm_dechets(request: ManualMaterialRequest) -> MatchResponse:
         return await viewer.confirm(request)
     except UnknownMaterialError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+if __name__ == "__main__":
+    settings = get_settings()
+    uvicorn.run(app=app, host=settings.ai_host, port=settings.ai_port)
