@@ -299,3 +299,63 @@ Les deux fichiers `conftest.py` fournis ne sont pas équivalents : le fichier de
 5. Vérifier qu'aucun secret ou fichier de modèle n'est ajouté au dépôt.
 6. Ouvrir une pull request et laisser les workflows CI effectuer les contrôles.
 
+
+## Classification avec seuil de confiance
+
+La classification repose sur un seuil `SIMILARITY_THRESHOLD` (défaut `0.5`). Au-dessus du seuil, l'API renvoie directement un match confirmé ; en dessous, elle propose une liste de candidats parmi lesquels l'utilisateur doit choisir.
+
+### Exemple : score au-dessus du seuil (`matched`)
+
+```bash
+curl -X POST 'http://localhost:8000/greener/upload/dechets?region=ile_de_france' \
+  -F 'file=@chemin/vers/dechet.jpg'
+```
+
+```json
+{
+  "status": "matched",
+  "material_name": "Bouteille plastique",
+  "bin_color": "Jaune",
+  "accepted_materials": [
+    {"slug": "plastique", "column": "PLST", "label": "Plastique"}
+  ]
+}
+```
+
+### Exemple : score en dessous du seuil (`needs_choice`)
+
+```json
+{
+  "status": "needs_choice",
+  "requires_user_choice": true,
+  "candidates": [
+    {"nom": "Bouteille A", "poubelle": "Jaune"},
+    {"nom": "Bouteille B", "poubelle": "Verre"}
+  ]
+}
+```
+
+### Confirmation manuelle
+
+L'utilisateur confirme son choix via :
+
+```bash
+curl -X POST 'http://localhost:8000/greener/upload/dechets/confirm' \
+  -H 'Content-Type: application/json' \
+  -d '{"slug": "plastique", "region": "ile_de_france"}'
+```
+
+Réponse :
+
+```json
+{
+  "status": "matched",
+  "material_name": "plastique",
+  "bin_color": "PLST",
+  "accepted_materials": [
+    {"slug": "plastique", "column": "PLST", "label": "Plastique"}
+  ]
+}
+```
+
+Les réponses publiques ne contiennent jamais le score interne : celui-ci n'est utilisé que pour comparer au seuil côté modèle.

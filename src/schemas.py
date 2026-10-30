@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Literal, Self
+from typing import Annotated, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -45,6 +45,9 @@ MATERIAL_CATALOG: dict[str, tuple[str, str]] = {
     "materiel-informatique": ("INF", "Matériel informatique"),
     "jouets": ("PLS", "Jouets"),
 }
+
+# Slug -> display label (used for case-insensitive lookup by name).
+MATERIAL_LABELS: dict[str, str] = {slug: label for slug, (_, label) in MATERIAL_CATALOG.items()}
 
 
 class AcceptedMaterial(BaseModel):
@@ -112,3 +115,117 @@ class QdrantPoint(BaseModel):
     point_id: int | str
     vector: list[float]
     payload: QdrantPayload
+
+
+class MaterialCandidate(BaseModel):
+    """A single waste candidate returned when classification is uncertain.
+
+    The similarity score is intentionally NOT exposed: it is used internally
+    by the model layer only.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    nom: str
+    poubelle: str
+    slug: MaterialSlug | None = None
+    label: str | None = None
+    accepted_materials: list[AcceptedMaterial] | None = None
+
+
+class CandidateResponse(BaseModel):
+    """Response returned when classification is below the confidence threshold."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    status: Literal["needs_choice"] = "needs_choice"
+    requires_user_choice: bool = True
+    candidates: list[MaterialCandidate]
+
+
+class MatchResponse(BaseModel):
+    """Response returned when classification is confident enough."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    status: Literal["matched"] = "matched"
+    material_name: str
+    bin_color: str
+    accepted_materials: list[AcceptedMaterial] | None = None
+    query: str | None = None
+    match_type: Literal["exact", "partial", "fuzzy"] | None = None
+    score: float | None = Field(default=None, ge=0.0, le=1.0)
+
+
+class NameCandidate(BaseModel):
+    """A ranked manual name-search candidate."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    nom: str
+    poubelle: str
+    accepted_materials: list[AcceptedMaterial] | None = None
+    score: float = Field(ge=0.0, le=1.0)
+
+
+class NameCandidateResponse(BaseModel):
+    """Response returned when manual name search requires a choice."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    status: Literal["needs_choice"] = "needs_choice"
+    query: str
+    candidates: list[NameCandidate]
+
+
+ManualConfirmResponse = Annotated[MatchResponse | NameCandidateResponse, Field(discriminator="status")]
+
+
+class ManualMaterialRequest(BaseModel):
+    """Body of the manual confirm endpoint."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    nom: str = Field(..., min_length=1, max_length=100)
+    region: str = Field(..., min_length=1)
+    slug: str | None = Field(default=None, min_length=1, deprecated=True)
+
+    @field_validator("nom")
+    @classmethod
+    def strip_name(cls, value: str) -> str:
+        """Strip surrounding whitespace and reject an empty name."""
+        value = value.strip()
+        if not value:
+            raise ValueError("Name must not be blank.")
+        return value
+
+    @field_validator("region")
+    @classmethod
+    def strip_region(cls, value: str) -> str:
+        """Strip surrounding whitespace and reject an empty region."""
+        value = value.strip()
+        if not value:
+            raise ValueError("Region must not be blank.")
+        return value
+
+    @field_validator("slug")
+    @classmethod
+    def strip_slug(cls, value: str | None) -> str | None:
+        """Strip surrounding whitespace from a deprecated catalog slug."""
+        if value is None:
+            return None
+        value = value.strip()
+        if not value:
+            raise ValueError("Slug must not be blank when provided.")
+        return value
+
+
+class UnknownMaterialError(Exception):
+    """Raised when a manual lookup does not match any known material."""
+
+    def __init__(self, query: str, region: str, suggestions: list[NameCandidate] | None = None) -> None:
+        """Store the query, region and any ranked suggestions."""
+        self.query = query
+        self.region = region
+        self.suggestions = suggestions or []
+        super().__init__(f"Unknown material '{query}' in region '{region}'.")
