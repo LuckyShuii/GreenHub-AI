@@ -59,6 +59,11 @@ class Settings(BaseSettings):
         ge=1,
         description="Number of candidate points to fetch from Qdrant per query.",
     )
+    match_accept_threshold: float = Field(default=0.85, alias="MATCH_ACCEPT_THRESHOLD", ge=0.0, le=1.0)
+    match_candidate_threshold: float = Field(default=0.60, alias="MATCH_CANDIDATE_THRESHOLD", ge=0.0, le=1.0)
+    match_ambiguity_margin: float = Field(default=0.05, alias="MATCH_AMBIGUITY_MARGIN", ge=0.0, le=1.0)
+    match_max_candidates: int = Field(default=5, alias="MATCH_MAX_CANDIDATES", ge=1)
+    match_min_query_length: int = Field(default=3, alias="MATCH_MIN_QUERY_LENGTH", ge=1)
 
     @property
     def embedding_model_path(self) -> Path:

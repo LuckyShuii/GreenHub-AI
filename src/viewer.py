@@ -7,6 +7,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from io import BytesIO
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from PIL import Image
@@ -16,13 +17,22 @@ from configs import Settings, get_settings
 from logging_config import configure_logging, get_logger
 
 from .controller import Controller
-from .embedder import ImageEmbedder
 from .fetcher import ImageFetcher
-from .indexer import RegionIndexer
-from .model import ClassificationResult, NoMatchError, UnknownRegionError
-from .regions import discover_region_files, load_region_payloads
+from .model import ClassificationResult, NoMatchError
+from .model import UnknownRegionError as ModelUnknownRegionError
+from .regions import (
+    RegionCatalog,
+    discover_region_files,
+    load_region_payloads,
+)
+from .regions import (
+    UnknownRegionError as CatalogUnknownRegionError,
+)
 from .repository import VectorRepository
-from .schemas import ManualMaterialRequest, MatchResponse, UnknownMaterialError
+from .schemas import ManualConfirmResponse, ManualMaterialRequest, UnknownMaterialError
+
+if TYPE_CHECKING:
+    from .embedder import ImageEmbedder
 
 logger = get_logger("greener.viewer")
 
@@ -38,6 +48,7 @@ class Viewer(FastAPI):
         """
         self.settings: Settings = settings or get_settings()
         self.controller: Controller | None = None
+        self.region_catalog: RegionCatalog | None = None
         super().__init__(title="Greener Waste Classifier", lifespan=self._lifespan)
         self._register_routes()
 
@@ -45,24 +56,23 @@ class Viewer(FastAPI):
     async def _lifespan(self, _app: FastAPI) -> AsyncIterator[None]:
         """Index missing regions and build the controller before serving requests."""
         configure_logging(self.settings.log_level)
+        from .embedder import ImageEmbedder
+
         embedder: ImageEmbedder = ImageEmbedder(
             model_path=self.settings.embedding_model_path,
             device=self.settings.device,
         )
-        client: AsyncQdrantClient = AsyncQdrantClient(
-            host=self.settings.qdrant_host, port=self.settings.qdrant_port
-        )
+        client: AsyncQdrantClient = AsyncQdrantClient(host=self.settings.qdrant_host, port=self.settings.qdrant_port)
         try:
             await self._index_missing_regions(client, embedder)
         finally:
             await client.close()
-        self.controller = Controller(embedder)
+        self.region_catalog = RegionCatalog.from_directory(Path(self.settings.data_dir))
+        self.controller = Controller(embedder, self.region_catalog, self.settings)
         logger.info("Greener API ready.")
         yield
 
-    async def _index_missing_regions(
-        self, client: AsyncQdrantClient, embedder: ImageEmbedder
-    ) -> None:
+    async def _index_missing_regions(self, client: AsyncQdrantClient, embedder: ImageEmbedder) -> None:
         """Upload images into Qdrant for every region without a collection.
 
         Args:
@@ -71,13 +81,13 @@ class Viewer(FastAPI):
         """
         region_files: list[Path] = discover_region_files(Path(self.settings.data_dir))
         missing: list[Path] = [
-            path
-            for path in region_files
-            if not await client.collection_exists(collection_name=path.stem)
+            path for path in region_files if not await client.collection_exists(collection_name=path.stem)
         ]
         if not missing:
             logger.info("All %d region collection(s) already exist.", len(region_files))
             return
+
+        from .indexer import RegionIndexer
 
         indexer: RegionIndexer = RegionIndexer(
             embedder=embedder,
@@ -90,9 +100,7 @@ class Viewer(FastAPI):
         )
         for region_file in missing:
             logger.info("Indexing region '%s'.", region_file.stem)
-            await indexer.index_region(
-                region_file.stem, load_region_payloads(region_file)
-            )
+            await indexer.index_region(region_file.stem, load_region_payloads(region_file))
 
     def _register_routes(self) -> None:
         """Attach the HTTP endpoints to the application."""
@@ -106,7 +114,8 @@ class Viewer(FastAPI):
             "/greener/upload/dechets/confirm",
             self.confirm_dechets,
             methods=["POST"],
-            response_model=MatchResponse,
+            response_model=ManualConfirmResponse,
+            responses={404: {"description": "Unknown region or no matching material."}},
         )
 
     def _get_controller(self) -> Controller:
@@ -138,17 +147,30 @@ class Viewer(FastAPI):
         image: Image.Image = self._decode_image(raw)
         try:
             return await controller.classify(image, region)
-        except UnknownRegionError as exc:
+        except ModelUnknownRegionError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         except NoMatchError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    async def confirm_dechets(self, request: ManualMaterialRequest) -> MatchResponse:
+    async def confirm_dechets(self, request: ManualMaterialRequest) -> ManualConfirmResponse:
         """Confirm a manual user selection from a previous needs_choice response."""
         controller: Controller = self._get_controller()
         try:
             return await controller.resolve_manual(request)
+        except CatalogUnknownRegionError as exc:
+            raise HTTPException(
+                status_code=404,
+                detail={"message": str(exc), "query": request.nom, "region": exc.region, "suggestions": []},
+            ) from exc
         except UnknownMaterialError as exc:
-            raise HTTPException(status_code=404, detail=str(exc)) from exc
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "message": str(exc),
+                    "query": exc.query,
+                    "region": exc.region,
+                    "suggestions": [item.model_dump() for item in exc.suggestions],
+                },
+            ) from exc
