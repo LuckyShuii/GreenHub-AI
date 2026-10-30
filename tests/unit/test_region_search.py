@@ -79,7 +79,7 @@ def test_unknown_region_is_distinct(catalog: RegionCatalog) -> None:
 
 def test_every_real_catalog_name_matches_exact() -> None:
     """Every shipped regional label is found as an exact match."""
-    root = Path(__file__).parent
+    root = Path(__file__).parents[2] / "data"
     catalog = RegionCatalog.from_directory(root)
     source = json.loads((root / "ile_de_france.json").read_text(encoding="utf-8"))
     for item in source:
