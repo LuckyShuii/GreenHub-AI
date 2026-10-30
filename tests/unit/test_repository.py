@@ -118,13 +118,13 @@ class TestUpsert:
         client.upsert.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_returns_false_on_client_error(
+    async def test_raises_on_client_error(
         self,
         repository: VectorRepository,
         client: AsyncMock,
         sample_point: QdrantPoint,
     ) -> None:
-        """Client failures are reported as a falsy result.
+        """Client failures are propagated instead of being masked.
 
         Args:
             repository: Repository under test.
@@ -133,9 +133,10 @@ class TestUpsert:
         """
         client.upsert.side_effect = RuntimeError("connection reset")
 
-        result = await repository.upsert(COLLECTION, sample_point)
+        with pytest.raises(RuntimeError, match="connection reset"):
+            await repository.upsert(COLLECTION, sample_point)
 
-        assert result is False
+        client.upsert.assert_awaited_once()
 
 
 class TestPointExists:
