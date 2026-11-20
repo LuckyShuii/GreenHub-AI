@@ -45,7 +45,47 @@ class Settings(BaseSettings):
         ge=1,
         description="Maximum uploaded image size in bytes.",
     )
+    max_image_pixels: int = Field(
+        default=40_000_000,
+        alias="MAX_IMAGE_PIXELS",
+        ge=1,
+        description="Maximum decoded image size (width * height) to prevent decompression bombs.",
+    )
+    inference_queue_timeout: float = Field(
+        default=30.0,
+        alias="INFERENCE_QUEUE_TIMEOUT",
+        gt=0.0,
+        description="Seconds a request may wait for an inference slot before getting HTTP 503.",
+    )
+    enable_docs: bool = Field(
+        default=False,
+        alias="ENABLE_DOCS",
+        description="Expose /docs, /redoc and /openapi.json.",
+    )
+    test_ui_dir: Path = Field(
+        default=Path("./test_ui"),
+        alias="TEST_UI_DIR",
+        description="Directory of the optional (git-ignored) test UI served at /greener.",
+    )
     images_per_label: int = Field(default=3, alias="IMAGES_PER_LABEL", ge=1)
+    similarity_threshold: float = Field(
+        default=0.5,
+        alias="SIMILARITY_THRESHOLD",
+        ge=0.0,
+        le=1.0,
+        description="Minimum Qdrant similarity score to consider a match confident.",
+    )
+    top_k: int = Field(
+        default=5,
+        alias="TOP_K",
+        ge=1,
+        description="Number of candidate points to fetch from Qdrant per query.",
+    )
+    match_accept_threshold: float = Field(default=0.85, alias="MATCH_ACCEPT_THRESHOLD", ge=0.0, le=1.0)
+    match_candidate_threshold: float = Field(default=0.60, alias="MATCH_CANDIDATE_THRESHOLD", ge=0.0, le=1.0)
+    match_ambiguity_margin: float = Field(default=0.05, alias="MATCH_AMBIGUITY_MARGIN", ge=0.0, le=1.0)
+    match_max_candidates: int = Field(default=5, alias="MATCH_MAX_CANDIDATES", ge=1)
+    match_min_query_length: int = Field(default=3, alias="MATCH_MIN_QUERY_LENGTH", ge=1)
 
     @property
     def embedding_model_path(self) -> Path:
@@ -64,4 +104,4 @@ def is_model_available(model_path: Path) -> bool:
 @lru_cache
 def get_settings() -> Settings:
     """Return the cached settings singleton."""
-    return Settings()  # type: ignore
+    return Settings()  # type: ignore[call-arg]

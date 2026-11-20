@@ -216,6 +216,19 @@ sequenceDiagram
 | `MAX_CONCURRENT_UPLOADS` | `2` | Taille du sémaphore de lecture des images. |
 | `IMAGES_PER_LABEL` | `3` | Nombre maximal d'images chargées par libellé. |
 | `EMBEDDING_MODEL_DIR` | `./models` | Répertoire racine des modèles locaux. |
+| `MAX_UPLOAD_SIZE` | `10485760` | Taille maximale d'un upload, en octets (HTTP 413 au-delà). |
+| `MAX_IMAGE_PIXELS` | `40000000` | Nombre maximal de pixels d'une image (protection contre les bombes de décompression). |
+| `INFERENCE_QUEUE_TIMEOUT` | `30` | Attente maximale (s) d'un créneau d'inférence avant HTTP 503. `MAX_CONCURRENT_UPLOADS` limite aussi les inférences simultanées. |
+| `ENABLE_DOCS` | `false` | Expose `/docs`, `/redoc` et `/openapi.json`. Désactivé par défaut en production. |
+| `TEST_UI_DIR` | `./test_ui` | UI de test optionnelle (ignorée par git), servie sur `/greener/` si `index.html` existe. |
+
+### Sécurité
+
+- seules les régions chargées depuis `DATA_DIR` sont acceptées (`GET /greener/regions` les liste) ;
+- seuls les formats JPEG, PNG et WEBP sont décodés ; la taille et les dimensions sont vérifiées avant décodage ;
+- les réponses portent des en-têtes `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` et une CSP stricte ;
+- le conteneur `web` tourne avec un utilisateur non-root, Qdrant n'écoute que sur `127.0.0.1` ;
+- configurer aussi `client_max_body_size` (ou équivalent) sur le reverse proxy, car les requêtes sans `Content-Length` sont mises en tampon par le serveur avant d'être limitées.
 
 Variables lues par les tests, avec leur défaut :
 
@@ -299,3 +312,63 @@ Les deux fichiers `conftest.py` fournis ne sont pas équivalents : le fichier de
 5. Vérifier qu'aucun secret ou fichier de modèle n'est ajouté au dépôt.
 6. Ouvrir une pull request et laisser les workflows CI effectuer les contrôles.
 
+
+## Classification avec seuil de confiance
+
+La classification repose sur un seuil `SIMILARITY_THRESHOLD` (défaut `0.5`). Au-dessus du seuil, l'API renvoie directement un match confirmé ; en dessous, elle propose une liste de candidats parmi lesquels l'utilisateur doit choisir.
+
+### Exemple : score au-dessus du seuil (`matched`)
+
+```bash
+curl -X POST 'http://localhost:8000/greener/upload/dechets?region=ile_de_france' \
+  -F 'file=@chemin/vers/dechet.jpg'
+```
+
+```json
+{
+  "status": "matched",
+  "material_name": "Bouteille plastique",
+  "bin_color": "Jaune",
+  "accepted_materials": [
+    {"slug": "plastique", "column": "PLST", "label": "Plastique"}
+  ]
+}
+```
+
+### Exemple : score en dessous du seuil (`needs_choice`)
+
+```json
+{
+  "status": "needs_choice",
+  "requires_user_choice": true,
+  "candidates": [
+    {"nom": "Bouteille A", "poubelle": "Jaune"},
+    {"nom": "Bouteille B", "poubelle": "Verre"}
+  ]
+}
+```
+
+### Confirmation manuelle
+
+L'utilisateur confirme son choix via :
+
+```bash
+curl -X POST 'http://localhost:8000/greener/upload/dechets/confirm' \
+  -H 'Content-Type: application/json' \
+  -d '{"slug": "plastique", "region": "ile_de_france"}'
+```
+
+Réponse :
+
+```json
+{
+  "status": "matched",
+  "material_name": "plastique",
+  "bin_color": "PLST",
+  "accepted_materials": [
+    {"slug": "plastique", "column": "PLST", "label": "Plastique"}
+  ]
+}
+```
+
+Les réponses publiques ne contiennent jamais le score interne : celui-ci n'est utilisé que pour comparer au seuil côté modèle.

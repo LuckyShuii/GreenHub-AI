@@ -15,8 +15,10 @@ services:
     ports:
       - "${AI_PORT}:${AI_PORT}"
     volumes:
-      - ./image_dir:/greener/image_dir
-      - ./models:/greener/models
+      - ./image_dir:/greener/image_dir:ro
+      - ./models:/greener/models:ro
+      # Optional, git-ignored test UI served at /greener/ when index.html exists.
+      - ./test_ui:/greener/test_ui:ro
     depends_on:
       qdrant:
         condition: service_healthy
@@ -36,8 +38,10 @@ services:
       - QDRANT__SERVICE__GRPC_PORT=${QDRANT_GRPC_PORT}
       - QDRANT__LOG_LEVEL=${QDRANT_LOG_LEVEL}
     ports:
-      - "${QDRANT_PORT}:${QDRANT_PORT}"
-      - "${QDRANT_GRPC_PORT}:${QDRANT_GRPC_PORT}"
+      # Bound to localhost only: Qdrant has no auth, and Docker bypasses UFW.
+      # The web service reaches it through the internal Docker network.
+      - "127.0.0.1:${QDRANT_PORT}:${QDRANT_PORT}"
+      - "127.0.0.1:${QDRANT_GRPC_PORT}:${QDRANT_GRPC_PORT}"
     volumes:
       - qdrant_storage:/qdrant/storage
 
