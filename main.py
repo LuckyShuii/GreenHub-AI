@@ -13,7 +13,7 @@ app: Viewer = Viewer()
 def run() -> None:
     """Start the Uvicorn server with the configured host and port."""
     settings: Settings = get_settings()
-    uvicorn.run(app=app, host=settings.ai_host, port=settings.ai_port)
+    uvicorn.run(app=app, host=settings.ai_host, port=settings.ai_port, server_header=False)
 
 
 if __name__ == "__main__":

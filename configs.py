@@ -45,6 +45,28 @@ class Settings(BaseSettings):
         ge=1,
         description="Maximum uploaded image size in bytes.",
     )
+    max_image_pixels: int = Field(
+        default=40_000_000,
+        alias="MAX_IMAGE_PIXELS",
+        ge=1,
+        description="Maximum decoded image size (width * height) to prevent decompression bombs.",
+    )
+    inference_queue_timeout: float = Field(
+        default=30.0,
+        alias="INFERENCE_QUEUE_TIMEOUT",
+        gt=0.0,
+        description="Seconds a request may wait for an inference slot before getting HTTP 503.",
+    )
+    enable_docs: bool = Field(
+        default=False,
+        alias="ENABLE_DOCS",
+        description="Expose /docs, /redoc and /openapi.json.",
+    )
+    test_ui_dir: Path = Field(
+        default=Path("./test_ui"),
+        alias="TEST_UI_DIR",
+        description="Directory of the optional (git-ignored) test UI served at /greener.",
+    )
     images_per_label: int = Field(default=3, alias="IMAGES_PER_LABEL", ge=1)
     similarity_threshold: float = Field(
         default=0.5,

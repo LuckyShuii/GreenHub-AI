@@ -187,8 +187,8 @@ class ManualMaterialRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     nom: str = Field(..., min_length=1, max_length=100)
-    region: str = Field(..., min_length=1)
-    slug: str | None = Field(default=None, min_length=1, deprecated=True)
+    region: str = Field(..., min_length=1, max_length=64)
+    slug: str | None = Field(default=None, min_length=1, max_length=64, deprecated=True)
 
     @field_validator("nom")
     @classmethod

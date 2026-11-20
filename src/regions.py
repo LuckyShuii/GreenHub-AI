@@ -223,26 +223,3 @@ class RegionCatalog:
         candidates = tuple(entry.candidate(value) for value, entry in candidate_pool[:max_candidates])
         return SearchResult(status="needs_choice" if qualified else "not_found", query=query, candidates=candidates)
 
-
-def lookup_by_name(region: str, name: str) -> dict[str, Any] | None:
-    """Find an exact normalized name in a single local region JSON file."""
-    if not name:
-        return None
-    path = Path(f"{region}.json")
-    if not path.is_file():
-        return None
-    try:
-        raw: Any = json.loads(path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, FileNotFoundError):
-        return None
-    if not isinstance(raw, list):
-        return None
-    needle = normalize(name)
-    return next(
-        (
-            entry
-            for entry in raw
-            if isinstance(entry, dict) and isinstance(entry.get("nom"), str) and normalize(entry["nom"]) == needle
-        ),
-        None,
-    )

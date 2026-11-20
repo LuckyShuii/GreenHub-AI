@@ -216,6 +216,19 @@ sequenceDiagram
 | `MAX_CONCURRENT_UPLOADS` | `2` | Taille du sémaphore de lecture des images. |
 | `IMAGES_PER_LABEL` | `3` | Nombre maximal d'images chargées par libellé. |
 | `EMBEDDING_MODEL_DIR` | `./models` | Répertoire racine des modèles locaux. |
+| `MAX_UPLOAD_SIZE` | `10485760` | Taille maximale d'un upload, en octets (HTTP 413 au-delà). |
+| `MAX_IMAGE_PIXELS` | `40000000` | Nombre maximal de pixels d'une image (protection contre les bombes de décompression). |
+| `INFERENCE_QUEUE_TIMEOUT` | `30` | Attente maximale (s) d'un créneau d'inférence avant HTTP 503. `MAX_CONCURRENT_UPLOADS` limite aussi les inférences simultanées. |
+| `ENABLE_DOCS` | `false` | Expose `/docs`, `/redoc` et `/openapi.json`. Désactivé par défaut en production. |
+| `TEST_UI_DIR` | `./test_ui` | UI de test optionnelle (ignorée par git), servie sur `/greener/` si `index.html` existe. |
+
+### Sécurité
+
+- seules les régions chargées depuis `DATA_DIR` sont acceptées (`GET /greener/regions` les liste) ;
+- seuls les formats JPEG, PNG et WEBP sont décodés ; la taille et les dimensions sont vérifiées avant décodage ;
+- les réponses portent des en-têtes `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` et une CSP stricte ;
+- le conteneur `web` tourne avec un utilisateur non-root, Qdrant n'écoute que sur `127.0.0.1` ;
+- configurer aussi `client_max_body_size` (ou équivalent) sur le reverse proxy, car les requêtes sans `Content-Length` sont mises en tampon par le serveur avant d'être limitées.
 
 Variables lues par les tests, avec leur défaut :
 
